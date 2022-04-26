@@ -861,6 +861,12 @@ touch /var/lock/subsys/local
 
 
 
+```
+chmod  +x /etc/rc.d/rc.local 
+```
+
+
+
 
 
 
