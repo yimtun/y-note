@@ -838,10 +838,6 @@ ip rule  del   from 192.168.10.124/32 to 192.168.80.123  table main
 
 ```
 vim /etc/rc.d/rc.local
-
-
-ip rule add  from 192.168.10.123/32 to 192.168.80.123  table 251 pref 10
-ip rule add  from 192.168.10.0/24  to  192.168.80.123   table 252 pref 100
 ```
 
 
@@ -849,12 +845,12 @@ ip rule add  from 192.168.10.0/24  to  192.168.80.123   table 252 pref 100
 
 
 ```
-cat  /etc/rc.d/rc.local 
 #!/bin/bash
 
-
-ip rule add  from 192.168.10.123/32 to 192.168.80.123  table 251 pref 10
-ip rule add  from 192.168.10.0/24  to  192.168.80.123   table 252 pref 100
+ip route add 192.168.80/24 via 192.168.20.20 table 251
+ip route add 192.168.80/24 via 192.168.30.20 table 252
+ip rule  add  from 192.168.10.123/32 to 192.168.80.123  table 251 pref 10
+ip rule  add  from 192.168.10.0/24  to  192.168.80.123   table 252 pref 100
 
 touch /var/lock/subsys/local
 ```
