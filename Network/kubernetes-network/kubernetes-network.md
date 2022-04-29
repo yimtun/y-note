@@ -4,11 +4,13 @@
 
 
 
-#  xx
 
 
 
 
+
+
+[toc]
 
 
 
@@ -375,6 +377,261 @@ type: cilium-cni
 ```
 https://docs.cilium.io/en/v1.10/gettingstarted/cni-chaining/
 ```
+
+
+
+
+
+
+
+## 07 2022-04-27-pass
+
+
+
+
+
+```
+vxlan
+
+mac in udp
+
+
+ip mac
+
+
+二层 mac
+三层 ip
+```
+
+
+
+
+
+
+
+
+
+vxlan
+
+
+
+https://support.huawei.com/enterprise/zh/doc/EDOC1100087027
+
+
+
+
+
+```
+stp
+逻辑上阻塞 某个端口
+stp 导致带宽利用率 降低
+```
+
+
+
+```
+mstp
+vrrp
+```
+
+
+
+
+
+vrrp+smtp
+
+
+
+http://www.h3c.com/cn/d_201305/785647_30003_0.htm
+
+
+
+
+
+
+
+```
+ecmp 协议
+vm  +  L2 +  leaf + L3 + spine (去掉汇聚层 不再使用二层的防环机制)
+```
+
+
+
+
+
+
+
+```
+linux vxlan  点对点
+
+两个服务器 L3 即可
+
+
+vni
+
+
+
+ip link add vxlan0 type vxlan id 5 dstport 4789 remote  192.168.2.62 local 192.168.2.61 dev ens33
+
+ip -d link show vxlan0
+
+vni id 5
+
+4789  端口是udp 端口
+
+
+ip addr add 20.1.1.2/24 dev vxlan0
+ip link set vxlan0 up
+
+
+
+
+测试
+ping -I x.x.x.x x.x.x.x
+
+tcpdump -pne -i ens33 icmp
+tcpdump -vvv -pne -i ens33 icmp
+
+
+p 关闭混杂模式  否则除了这两个服务器的其他服务器上 也能抓到包
+
+
+
+清理arp
+
+arp -d 10.0.1.1
+
+
+
+
+```
+
+
+
+
+
+
+
+```
+vxlan group 多播组
+
+没有local remote 
+
+
+ip link add vxlan0 type vxlan id 6 dstport 4789 group 239.1.1.1 dev ens33
+
+ip addr add 10.20.1.3/24 dev vxlan0
+
+ip link set vxlan0 up
+
+4789 端口到底是谁的
+
+
+```
+
+
+
+
+
+
+
+```
+bgp 边界网关协议
+bgp  rr    bgp 路由反射器
+vtep 
+
+bgp evpn peer 解决 full mesh 问题
+
+
+
+
+
+vtep  把自己的信息 告诉 bgp rr 
+vtep 从 bgp rr 获取其他vtep的信息
+
+
+
+
+
+full mesh 全链接
+每个vtep都连路由器
+
+```
+
+
+
+
+
+
+
+
+
+evpn
+
+
+
+https://support.huawei.com/enterprise/zh/doc/EDOC1100164807?idPath=24030814
+
+
+
+
+
+
+
+https://arthurchiao.art/blog/spine-leaf-design-zh/
+
+
+
+
+
+
+
+
+
+
+
+
+
+```
+cilium
+
+
+1.11
+ipv4-native-routing-cidr: x.x.x.x/y
+如果不设置会做snat
+
+
+1.10
+native-routing-cidr: x.x.x.x/y
+
+
+
+进入cilium 容器 查看某个 vni id
+
+
+cilium endpoint list
+
+cilium identity list
+
+
+lxc86xxxx  veth pair 的一端  抓包 有去无回
+单向的
+
+回来的在哪里 ？？
+
+
+
+
+
+
+
+```
+
+
+
+
+
+
 
 
 

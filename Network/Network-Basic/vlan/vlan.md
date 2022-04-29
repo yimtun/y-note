@@ -14,13 +14,23 @@
 
 
 
-## 1.1 结合ns 测试一个普通的网桥
+## 1.1 用一个 bridge 连接两对 veth
 
 
 
 
 
-### 用一个网桥连接两个ns
+
+
+![image-20220429164112843](/Users/yandun/github/y-note/Network/Network-Basic/vlan/vlan.assets/image-20220429164112843.png)
+
+
+
+
+
+
+
+
 
 
 
@@ -93,6 +103,14 @@ ip netns exec  n2  ping  10.1.1.1
 
 
 
+
+
+
+
+
+
+
+## 1.2 测试 trunk
 
 
 
