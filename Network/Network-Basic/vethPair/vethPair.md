@@ -4,7 +4,7 @@
 
 
 
-![image-20220429153000334](/Users/yandun/github/y-note/Network/Network-Basic/vethPair/vethPair.assets/image-20220429153000334.png)
+![image-20220429153000334](./vethPair.assets/image-20220429153000334.png)
 
 
 
