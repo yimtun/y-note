@@ -22,7 +22,7 @@
 
 
 
-![image-20220429164112843](/Users/yandun/github/y-note/Network/Network-Basic/vlan/vlan.assets/image-20220429164112843.png)
+![image-20220429164112843](./vlan.assets/image-20220429164112843.png)
 
 
 
