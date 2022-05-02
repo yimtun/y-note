@@ -959,6 +959,22 @@ https://developers.redhat.com/blog/2017/09/14/vlan-filter-support-on-bridge#
 
 
 
+
+
+
+
+![image-20220502225403361](vlan.assets/image-20220502225403361.png)
+
+
+
+
+
+
+
+
+
+
+
 ```
 两个交换机
 三个pc
@@ -1045,14 +1061,12 @@ exit
 # 先测试下 这个网线是否ok
 
 # ping ok
-ip netns exec  nssw1 bash
-ping 10.1.1.2
+ip netns exec  nssw1 ping 10.1.1.2
 
 
 
 # ping ok
-ip netns exec  nssw2 bash
-ping 10.1.1.1
+ip netns exec  nssw2 ping 10.1.1.1
 
 
 
@@ -1138,13 +1152,13 @@ ip  netns exec nspc2   ip  addr add  10.1.1.102/24 dev nspc2-eth1
 
 测试
 
-ip  netns exec nspc1   bash
- ping 10.1.1.102  # 通
+ip  netns exec nspc1  ping 10.1.1.102 
+# 通
  
  
  
-ip  netns exec nspc2   bash
-ping 10.1.1.101   # 通
+ip  netns exec nspc2  ping 10.1.1.101   
+# 通
 
 
 
@@ -1207,7 +1221,7 @@ ip  netns exec  nssw2 bridge vlan del dev nssw2-eth0 vid  1
 
 
 
-# 添加 vlan 100
+# 添加 vlan 100 vlan 200
 ip  netns exec  nssw1 bridge vlan add dev nssw1-eth0 vid  100 pvid  tagged master
 ip  netns exec  nssw2 bridge vlan add dev nssw2-eth0 vid  100 pvid  tagged master
 
@@ -1234,7 +1248,7 @@ ip  netns exec nspc2   ip  addr add  100.1.1.102/24 dev nspc2-eth1.100
 
 # 测试
 
-ip  netns exec nspc1 ping 100.1.1.102
+ip  netns exec nspc1 ping -I nspc1-eth1.100 100.1.1.102 -c 2
 
 
 
@@ -1317,41 +1331,6 @@ ip  netns exec nspc2   ip  addr add  200.1.1.102/24 dev nspc2-eth1.200
 # 测试ok
 
 ip  netns exec nspc1 ping -I  200.1.1.101 200.1.1.102
-
-
-
-# 保存通时的记录
-
-[root@localhost ~]# ip netns exec nssw1 bridge vlan show
-port    vlan ids
-nssw1-eth0       100 PVID
-         200
-
-nssw1-br0        1 PVID Egress Untagged
-
-nssw1-eth1       1 Egress Untagged
-         100 PVID
-         200
-
-
-[root@localhost ~]# ip netns exec nssw2 bridge vlan show
-port    vlan ids
-nssw2-eth0       100 PVID
-         200
-
-nssw2-br0        1 PVID Egress Untagged
-
-nssw2-eth1       1 Egress Untagged
-         100 PVID
-         200
-
-
-
-
-
-
-
-
 ```
 
 
@@ -1461,63 +1440,7 @@ ip  netns exec nspc3  ip link  add link nspc3-eth3 name nspc3-eth3.200  type vla
 ip  netns exec nspc3  ip link  set nspc3-eth3.200  up
 ip  netns exec nspc3  ip addr add  200.1.1.103/24 dev nspc3-eth3.200
 
-
-
-
-#. 测试
-
-ip  netns exec nspc3   bash
-
-
-ip  netns exec nspc3 ping -I  200.1.1.103 200.1.1.101
-
-PING 200.1.1.101 (200.1.1.101) 56(84) bytes of data.
-64 bytes from 200.1.1.101: icmp_seq=1 ttl=64 time=0.050 ms
-64 bytes from 200.1.1.101: icmp_seq=2 ttl=64 time=0.091 ms
-
-
-ip  netns exec nspc3 ping -I  200.1.1.103 200.1.1.102
-
-PING 200.1.1.102 (200.1.1.102) 56(84) bytes of data.
-64 bytes from 200.1.1.102: icmp_seq=1 ttl=64 time=0.057 ms
-64 bytes from 200.1.1.102: icmp_seq=2 ttl=64 time=0.268 ms
-
-
-
 #  记录当前成功的信息
-
-
-
-
-
-ip  netns exec nssw1 bridge vlan show
-port    vlan ids
-nssw1-eth0       100 PVID
-                 200
-
-nssw1-br0        1 PVID Egress Untagged
-
-nssw1-eth1       1 Egress Untagged
-                 100 PVID
-                 200
-
-nssw1-eth3       200
-
-
-
-ip  netns exec nssw2 bridge vlan show
-port    vlan ids
-nssw2-eth0       100 PVID
-                 200
-
-nssw2-br0        1 PVID Egress Untagged
-
-nssw2-eth1       1 Egress Untagged
-                 100 PVID
-                 200
-
-
-
 ip  netns exec nssw1 brctl show
 bridge name     bridge id               STP enabled     interfaces
 nssw1-br0               8000.16a582899009       no      nssw1-eth0
@@ -1530,89 +1453,82 @@ bridge name     bridge id               STP enabled     interfaces
 nssw2-br0               8000.3ea6d0a37f91       no      nssw2-eth0
                                                         nssw2-eth1
                                                         
-                                                                                                                
-
+                                                                                                               
 
 ip  netns exec nspc1 ip a
-1: lo: <LOOPBACK> mtu 65536 qdisc noop state DOWN group default qlen 1000
-    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
-2: nspc1-eth1.100@nspc1-eth1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
-    link/ether 36:6c:ad:68:bf:21 brd ff:ff:ff:ff:ff:ff
-    inet 100.1.1.101/24 scope global nspc1-eth1.100
-       valid_lft forever preferred_lft forever
-    inet6 fe80::346c:adff:fe68:bf21/64 scope link 
-       valid_lft forever preferred_lft forever
-3: nspc1-eth1.200@nspc1-eth1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
-    link/ether 36:6c:ad:68:bf:21 brd ff:ff:ff:ff:ff:ff
-    inet 200.1.1.101/24 scope global nspc1-eth1.200
-       valid_lft forever preferred_lft forever
-    inet6 fe80::346c:adff:fe68:bf21/64 scope link 
-       valid_lft forever preferred_lft forever
-6: nspc1-eth1@if5: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
-    link/ether 36:6c:ad:68:bf:21 brd ff:ff:ff:ff:ff:ff link-netnsid 0
-    inet 10.1.1.101/24 scope global nspc1-eth1
-       valid_lft forever preferred_lft forever
-    inet6 fe80::346c:adff:fe68:bf21/64 scope link 
-       valid_lft forever preferred_lft forever
-       
-       
-       
-       
        
 ip  netns exec nspc2 ip a
-1: lo: <LOOPBACK> mtu 65536 qdisc noop state DOWN group default qlen 1000
-    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
-2: nspc2-eth1.100@nspc2-eth1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
-    link/ether 7a:24:e8:ca:e5:79 brd ff:ff:ff:ff:ff:ff
-    inet 100.1.1.102/24 scope global nspc2-eth1.100
-       valid_lft forever preferred_lft forever
-    inet6 fe80::7824:e8ff:feca:e579/64 scope link 
-       valid_lft forever preferred_lft forever
-3: nspc2-eth1.200@nspc2-eth1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
-    link/ether 7a:24:e8:ca:e5:79 brd ff:ff:ff:ff:ff:ff
-    inet 200.1.1.102/24 scope global nspc2-eth1.200
-       valid_lft forever preferred_lft forever
-    inet6 fe80::7824:e8ff:feca:e579/64 scope link 
-       valid_lft forever preferred_lft forever
-8: nspc2-eth1@if7: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
-    link/ether 7a:24:e8:ca:e5:79 brd ff:ff:ff:ff:ff:ff link-netnsid 0
-    inet 10.1.1.102/24 scope global nspc2-eth1
-       valid_lft forever preferred_lft forever
-    inet6 fe80::7824:e8ff:feca:e579/64 scope link 
-       valid_lft forever preferred_lft forever
-       
-       
-       
+
 ip  netns exec nspc3 ip a
-1: lo: <LOOPBACK> mtu 65536 qdisc noop state DOWN group default qlen 1000
-    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
-2: nspc3-eth3.200@nspc3-eth3: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
-    link/ether ca:63:37:d8:7d:d9 brd ff:ff:ff:ff:ff:ff
-    inet 200.1.1.103/24 scope global nspc3-eth3.200
-       valid_lft forever preferred_lft forever
-    inet6 fe80::c863:37ff:fed8:7dd9/64 scope link 
-       valid_lft forever preferred_lft forever
-10: nspc3-eth3@if9: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
-    link/ether ca:63:37:d8:7d:d9 brd ff:ff:ff:ff:ff:ff link-netnsid 1
-    inet 10.1.1.3/24 scope global nspc3-eth3
-       valid_lft forever preferred_lft forever
-    inet6 fe80::c863:37ff:fed8:7dd9/64 scope link 
-       valid_lft forever preferred_lft forever
-[root@localhost ~]# 
+
 ```
 
  
 
-
-
-
-
-
-
 ```
+#  二层的协议 不需要开启  ip_forward
+echo 0 > /proc/sys/net/ipv4/ip_forward
+```
+
+
+
+
+
+```1
 # 进一步清理测试
 
 
+
+ip  netns exec  nssw1 bridge vlan  del dev nssw1-eth1 vid  1
+ip  netns exec  nssw2 bridge vlan  del dev nssw2-eth1 vid  1
+
+
+ip  netns exec  nssw1 bridge vlan  del dev nssw1-br0 vid  1 self
+ip  netns exec  nssw2 bridge vlan  del dev nssw2-br0 vid  1 self
+
+
+最终vlan 信息
+
+
+
+ip  netns exec nssw1 bridge vlan show
+
+port              vlan ids
+nssw1-eth0        100 PVID
+                  200
+
+nssw1-br0          None
+
+nssw1-eth1         100 PVID
+                   200
+
+nssw1-eth3         200
+
+
+
+
+ip  netns exec nssw2 bridge vlan show
+port             vlan ids
+nssw2-eth0       100 PVID
+                 200
+
+nssw2-br0        None
+
+nssw2-eth1       100 PVID
+                 200
+
+
+
+
+
+
+ip  netns exec nspc3 ping -I nspc3-eth3.200  200.1.1.101 # 同一个 交换机  nssw1-br0
+ip  netns exec nspc3 ping -I nspc3-eth3.200  200.1.1.102 # 不是同一个交换机 nssw1-br0 + nssw2-br0
+
+
+ip  netns exec nspc1 ping -I nspc1-eth1.100  100.1.1.102  # 不是同一个交换机 nssw1-br0 + nssw2-br0
+ip  netns exec nspc1 ping -I nspc1-eth1.200  200.1.1.103  # 同一个 交换机  nssw1-br0
+ip  netns exec nspc1 ping -I nspc1-eth1.200  200.1.1.102  # 不是同一个交换机 nssw1-br0 + nssw2-br0
 ```
 
 
@@ -1639,10 +1555,6 @@ vm2  port1    vmware-桥接网络    ssh
 vm3
  
 vm4
- 
- 
- 
- 
  
 ```
 
