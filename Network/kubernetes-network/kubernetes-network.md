@@ -14,6 +14,12 @@
 
 
 
+## 00 
+
+overheads  开销
+
+
+
 ## 01 2022-04-15
 
 cilium
@@ -619,10 +625,125 @@ lxc86xxxx  veth pair 的一端  抓包 有去无回
 
 回来的在哪里 ？？
 
+```
 
 
 
 
+
+
+
+
+
+## 08 2022-04-29-pass
+
+
+
+```
+host-routing   is XDP（eXpress Data Path） xdp not kernel bypath
+```
+
+
+
+cilium  vxlan
+
+
+
+overhead
+
+
+
+https://cilium.io/blog/2021/05/11/cni-benchmark
+
+
+
+
+
+https://cilium.io/blog/2020/11/10/cilium-19
+
+
+
+```
+eBPF host routing
+
+bpf_redirect_peer   进到pod内部
+bpf_redirect_neigh  pod 出来
+```
+
+
+
+```
+overhead
+```
+
+
+
+
+
+```
+cilium datapath
+
+```
+
+
+
+```
+two pod on same node
+
+tcpdump -pne -i eth0  (in pod)
+
+-p 关闭混杂模式
+tcpdump -pne -i (veth pair in root ns)
+```
+
+
+
+
+
+```
+pod 内部网卡 32位掩码 相当于没有和它是一个网段的，直接走了默认路由 走三层
+返回的不是网关的mac 地址，（返回的是 veth pari in root ns  网卡设备的mac）
+
+
+arp 查询
+
+只有 request 没有 reply
+```
+
+
+
+
+
+
+
+```
+tc filter show ingress
+tc filter show egress dev lxcssxwerr
+```
+
+
+
+```
+kubectl -n kube-system exec -t cilium-xxx -- bash
+
+cilium monitor 
+
+cilium monitor -vv   >  xx.txt
+
+identify=xxx
+
+cilium identify list
+
+pod-1 pod-2 on save node
+
+Conntrack lookup  (in pod 1 发出去的) 
+
+Conntrack lookup  (in pod 2 收进来的)
+
+
+
+
+同节点的pod 才用到  eBPF host routing
 
 
 ```
@@ -632,6 +753,114 @@ lxc86xxxx  veth pair 的一端  抓包 有去无回
 
 
 
+
+
+
+
+
+```
+1  tcpdup
+2  cilium monitor
+3  iptables trace-id
+4  pwru
+```
+
+
+
+
+
+```
+pwru --filter-dst-ip x.x.x.x --filter-proto icmp --output-stack
+
+pwru --filter-dst-ip x.x.x.x --filter-proto icmp --output-tuple
+```
+
+
+
+```
+__ip_local_out
+```
+
+
+
+```
+host reachable services
+```
+
+
+
+
+
+```
+cilium 16进制
+```
+
+
+
+```
+next cilium vxlan 扩节点
+```
+
+
+
+
+
+
+
+## 09 2022-05-01
+
+
+
+
+
+```
+1 cilium vxlan pod  on  diffent node 
+```
+
+
+
+
+
+
+
+
+
+```
+Hairpin  mode
+bpftool net show
+bpftool map list --bpffs -j | jq 
+
+bpftool map dump id 92 (16 进制 c0 192)
+cilium bpf  tunnel list
+```
+
+
+
+
+
+```
+dma
+sk buffer
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+01:31
+
+```
+tcpdump
+cilium monitor
+```
 
 
 
