@@ -156,6 +156,27 @@
 
 
 
+## docker
+
+
+
+```
+docker run -d --privileged --name nginx centos:7 /usr/sbin/init
+
+docker exec -it nginx /bin/bash
+
+
+
+yum install epel-release
+yum -y install nginx
+systemctl  enable --now  nginx
+timedatectl set-timezone Asia/Shanghai
+
+
+
+docker run -d  -p 80:80 --privileged yimtune/centos79 /usr/sbin/init
+```
+
 
 
 

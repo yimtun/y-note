@@ -42,5 +42,14 @@ apt-cache search linux| grep linux-headers-5.11.*-generic
 
 
 
+## 4 时区设置
+
+
+
+```
+apt-get install tzdata
+dpkg-reconfigure tzdata
+```
+
 
 
