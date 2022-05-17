@@ -126,15 +126,6 @@
 
 
 
-# Self-questioning
-
-## 1 
-
-## 2 
-
-## 3 
-
-## 4 
 
 
 
@@ -172,10 +163,18 @@ yum -y install nginx
 systemctl  enable --now  nginx
 timedatectl set-timezone Asia/Shanghai
 
-
-
 docker run -d  -p 80:80 --privileged yimtune/centos79 /usr/sbin/init
 ```
+
+
+
+
+
+# Self-questioning
+
+
+
+## network [network](Self-questioning/network/network.md)
 
 
 

@@ -2529,6 +2529,40 @@ https://isovalent.com/blog/post/2022-05-03-servicemesh-security
 
 
 
+## 14  2022-05-11
+
+
+
+calico
+
+
+
+https://projectcalico.docs.tigera.io/getting-started/kubernetes/quickstart
+
+
+
+01:19
+
+
+
+
+
+```
+calicoctl  node status  --allow-version-mismatch
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
