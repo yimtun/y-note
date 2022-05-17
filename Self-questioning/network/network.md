@@ -76,6 +76,11 @@ curl   -silent --output nul --show-error --fail  172.16.100.3:80
 
 
 
+-S 
+
+```
+tcpdump -nn -S  tcp and  port 22  and host 172.16.100.4
+```
 
 ```
 三次握手
