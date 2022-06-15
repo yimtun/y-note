@@ -22,6 +22,26 @@
 
 
 
+## windows network info
+
+
+
+| net card                       | ip                             | vmware net |
+| ------------------------------ | ------------------------------ | ---------- |
+| windows10 phisisycal net card  | 192.168.3.12/24 gw 192.168.3.1 |            |
+| VMware Network Adapter VMnet11 | 11.1.0.2/24 no gw              | vmnet11    |
+| VMware Network Adapter VMnet12 | 12.1.0.2/24 no gw              | vmnet12    |
+| VMware Network Adapter VMnet13 | 13.1.0.2/24 no gw              | vmnet13    |
+|                                |                                |            |
+
+
+
+
+
+
+
+
+
 ## linux server net info 
 
 
@@ -1298,7 +1318,7 @@ for line in `kubectl get pods -lapp=nginx -ogo-template --template='{{range .ite
 
 
 
-# 11 realRouterReplaceBgpSoftwareBird
+# 11 phsicalRouterReplaceBgpSoftwareBird
 
 
 
@@ -1308,5 +1328,396 @@ for line in `kubectl get pods -lapp=nginx -ogo-template --template='{{range .ite
 
 ```
 poweroff
+```
+
+
+
+
+
+## ensp config
+
+
+
+
+
+
+
+
+
+![image-20220615173121304](calico-bgp-Cross-subnet.assets/image-20220615173121304.png)
+
+
+
+
+
+
+
+
+
+
+
+router  AR2240
+
+
+
+
+
+## config router ip
+
+
+
+
+
+```
+AR2240
+
+sys
+
+int g 0/0/0  
+ip a 11.1.0.1 24
+
+int g 0/0/1  
+ip a 12.1.0.1 24
+
+int g 0/0/2
+ip a 13.1.0.1 24
+
+
+
+ping 11.1.0.250
+ping 11.1.0.251
+
+ping 12.1.0.252
+ping 12.1.0.253
+
+```
+
+
+
+
+
+
+
+## before config bgp get bgp status
+
+
+
+```
+[root@11-1-0-250 ~]# calicoctl  node status
+Calico process is running.
+
+IPv4 BGP status
++--------------+-------------------+-------+------------+--------------------------------+
+| PEER ADDRESS |     PEER TYPE     | STATE |   SINCE    |              INFO              |
++--------------+-------------------+-------+------------+--------------------------------+
+| 11.1.0.251   | node-to-node mesh | up    | 2022-06-14 | Established                    |
+| 12.1.0.252   | node-to-node mesh | up    | 09:37:10   | Established                    |
+| 12.1.0.253   | node-to-node mesh | up    | 09:37:14   | Established                    |
+| 13.1.0.1     | global            | start | 09:26:37   | Connect Socket: No route to    |
+|              |                   |       |            | host                           |
++--------------+-------------------+-------+------------+--------------------------------+
+
+
+
+13.1.0.1 is linux-router it is  shutdown
+```
+
+
+
+
+
+## config ensp bgp
+
+
+
+
+
+```
+bgp 64512
+router-id 13.1.0.1
+peer 11.1.0.250 as-number 64512
+
+peer 11.1.0.251 as-number 64512
+
+peer 12.1.0.252 as-number 64512
+
+peer 12.1.0.253 as-number 64512
+```
+
+
+
+
+
+
+
+```
+dis bgp peer
+```
+
+
+
+```
+[Huawei-bgp]dis bgp peer
+
+ BGP local router ID : 13.1.0.1
+ Local AS number : 64512
+ Total number of peers : 4		  Peers in established state : 4
+
+  Peer            V          AS  MsgRcvd  MsgSent  OutQ  Up/Down       State Pre fRcv
+
+  11.1.0.250      4       64512        6        5     0 00:02:07 Established    
+   1
+  11.1.0.251      4       64512        6        4     0 00:01:58 Established    
+   1
+  12.1.0.252      4       64512        6        4     0 00:01:41 Established    
+   1
+  12.1.0.253      4       64512        4        3     0 00:00:16 Established    
+   1
+[Huawei-bgp]
+```
+
+
+
+
+
+
+
+
+
+```
+dis  ip routing-table 
+```
+
+
+
+```
+[Huawei-bgp]dis  ip routing-table 
+Route Flags: R - relay, D - download to fib
+------------------------------------------------------------------------------
+Routing Tables: Public
+         Destinations : 17       Routes : 17       
+
+Destination/Mask    Proto   Pre  Cost      Flags NextHop         Interface
+
+   10.244.187.0/26  IBGP    255  0          RD   11.1.0.250      GigabitEthernet0/0/0
+   10.244.223.0/26  IBGP    255  0          RD   12.1.0.252      GigabitEthernet0/0/1
+ 10.244.229.192/26  IBGP    255  0          RD   11.1.0.251      GigabitEthernet0/0/0
+  10.244.240.64/26  IBGP    255  0          RD   12.1.0.253      GigabitEthernet0/0/1
+       11.1.0.0/24  Direct  0    0           D   11.1.0.1        GigabitEthernet0/0/0
+       11.1.0.1/32  Direct  0    0           D   127.0.0.1       GigabitEthernet0/0/0
+     11.1.0.255/32  Direct  0    0           D   127.0.0.1       GigabitEthernet0/0/0
+       12.1.0.0/24  Direct  0    0           D   12.1.0.1        GigabitEthernet0/0/1
+       12.1.0.1/32  Direct  0    0           D   127.0.0.1       GigabitEthernet0/0/1
+     12.1.0.255/32  Direct  0    0           D   127.0.0.1       GigabitEthernet0/0/1
+       13.1.0.0/24  Direct  0    0           D   13.1.0.1        GigabitEthernet0/0/2
+       13.1.0.1/32  Direct  0    0           D   127.0.0.1       GigabitEthernet0/0/2
+     13.1.0.255/32  Direct  0    0           D   127.0.0.1       GigabitEthernet0/0/2
+      127.0.0.0/8   Direct  0    0           D   127.0.0.1       InLoopBack0
+      127.0.0.1/32  Direct  0    0           D   127.0.0.1       InLoopBack0
+127.255.255.255/32  Direct  0    0           D   127.0.0.1       InLoopBack0
+255.255.255.255/32  Direct  0    0           D   127.0.0.1       InLoopBack0
+```
+
+
+
+
+
+## get calico bgp status
+
+
+
+```
+[root@11-1-0-250 ~]# calicoctl  node status
+Calico process is running.
+
+IPv4 BGP status
++--------------+-------------------+-------+------------+-------------+
+| PEER ADDRESS |     PEER TYPE     | STATE |   SINCE    |    INFO     |
++--------------+-------------------+-------+------------+-------------+
+| 11.1.0.251   | node-to-node mesh | up    | 2022-06-14 | Established |
+| 12.1.0.252   | node-to-node mesh | up    | 09:37:10   | Established |
+| 12.1.0.253   | node-to-node mesh | up    | 09:37:14   | Established |
+| 13.1.0.1     | global            | up    | 09:47:50   | Established |
++--------------+-------------------+-------+------------+-------------+
+
+IPv6 BGP status
+No IPv6 peers found.
+
+
+[root@11-1-0-251 ~]# calicoctl  node status
+Calico process is running.
+
+IPv4 BGP status
++--------------+-------------------+-------+------------+-------------+
+| PEER ADDRESS |     PEER TYPE     | STATE |   SINCE    |    INFO     |
++--------------+-------------------+-------+------------+-------------+
+| 11.1.0.250   | node-to-node mesh | up    | 2022-06-14 | Established |
+| 12.1.0.252   | node-to-node mesh | up    | 09:37:10   | Established |
+| 12.1.0.253   | node-to-node mesh | up    | 09:37:13   | Established |
+| 13.1.0.1     | global            | up    | 09:47:59   | Established |
++--------------+-------------------+-------+------------+-------------+
+
+IPv6 BGP status
+No IPv6 peers found.
+
+
+[root@12-1-0-252 ~]# calicoctl  node status
+Calico process is running.
+
+IPv4 BGP status
++--------------+-------------------+-------+------------+-------------+
+| PEER ADDRESS |     PEER TYPE     | STATE |   SINCE    |    INFO     |
++--------------+-------------------+-------+------------+-------------+
+| 11.1.0.250   | node-to-node mesh | up    | 09:37:11   | Established |
+| 11.1.0.251   | node-to-node mesh | up    | 09:37:11   | Established |
+| 12.1.0.253   | node-to-node mesh | up    | 2022-06-14 | Established |
+| 13.1.0.1     | global            | up    | 09:48:16   | Established |
++--------------+-------------------+-------+------------+-------------+
+
+IPv6 BGP status
+No IPv6 peers found.
+
+
+
+
+[root@12-1-0-253 ~]# calicoctl  node status
+Calico process is running.
+
+IPv4 BGP status
++--------------+-------------------+-------+------------+-------------+
+| PEER ADDRESS |     PEER TYPE     | STATE |   SINCE    |    INFO     |
++--------------+-------------------+-------+------------+-------------+
+| 11.1.0.250   | node-to-node mesh | up    | 09:37:15   | Established |
+| 11.1.0.251   | node-to-node mesh | up    | 09:37:15   | Established |
+| 12.1.0.252   | node-to-node mesh | up    | 2022-06-14 | Established |
+| 13.1.0.1     | global            | up    | 09:49:42   | Established |
++--------------+-------------------+-------+------------+-------------+
+
+IPv6 BGP status
+No IPv6 peers found.
+```
+
+
+
+
+
+## test
+
+
+
+###  recreate deployment
+
+
+
+```
+kubectl  delete deploy nginx-deployment
+```
+
+
+
+```
+cat <<EOF | kubectl apply -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: yimtune/nginx:1.21.6
+        ports:
+        - containerPort: 80
+EOF
+```
+
+
+
+
+
+```
+one pod on each node
+[root@11-1-0-250 ~]# kubectl  get pod -o wide  
+NAME                                READY   STATUS    RESTARTS   AGE   IP               NODE         NOMINATED NODE   READINESS GATES
+nginx-deployment-6f8cbdc6f5-6j6sg   1/1     Running   0          10s   10.244.229.197   11.1.0.251   <none>           <none>
+nginx-deployment-6f8cbdc6f5-6wmgv   1/1     Running   0          10s   10.244.223.1     12.1.0.252   <none>           <none>
+nginx-deployment-6f8cbdc6f5-gzk7h   1/1     Running   0          10s   10.244.240.65    12.1.0.253   <none>           <none>
+nginx-deployment-6f8cbdc6f5-qznwr   1/1     Running   0          10s   10.244.187.2     11.1.0.250   <none>           <none>
+```
+
+
+
+```
+kubectl get pods -lapp=nginx -ogo-template --template='{{range .items}}{{printf "%s\n" .status.podIP}}{{end}}'
+10.244.229.197
+10.244.223.1
+10.244.240.65
+10.244.187.2
+```
+
+
+
+### ensp router test
+
+
+
+
+
+```
+ping 
+10.244.229.197
+10.244.223.1
+10.244.240.65
+10.244.187.2
+```
+
+
+
+
+
+### each node curl nginx pod
+
+
+
+```
+[root@11-1-0-250 ~]# for line in `kubectl get pods -lapp=nginx -ogo-template --template='{{range .items}}{{printf "%s\n" .status.podIP}}{{end}}'`; do curl  -L -s -o /dev/null -w "%{http_code}" $line && echo ":ok"; done
+200:ok
+200:ok
+200:ok
+200:ok
+[root@11-1-0-250 ~]# 
+
+
+[root@11-1-0-251 ~]# for line in `kubectl get pods -lapp=nginx -ogo-template --template='{{range .items}}{{printf "%s\n" .status.podIP}}{{end}}'`; do curl  -L -s -o /dev/null -w "%{http_code}" $line && echo ":ok"; done
+200:ok
+200:ok
+200:ok
+200:ok
+[root@11-1-0-251 ~]# 
+
+
+[root@12-1-0-252 ~]# for line in `kubectl get pods -lapp=nginx -ogo-template --template='{{range .items}}{{printf "%s\n" .status.podIP}}{{end}}'`; do curl  -L -s -o /dev/null -w "%{http_code}" $line && echo ":ok"; done
+200:ok
+200:ok
+200:ok
+200:ok
+[root@12-1-0-252 ~]# 
+
+[root@12-1-0-253 ~]# for line in `kubectl get pods -lapp=nginx -ogo-template --template='{{range .items}}{{printf "%s\n" .status.podIP}}{{end}}'`; do curl  -L -s -o /dev/null -w "%{http_code}" $line && echo ":ok"; done
+200:ok
+200:ok
+200:ok
+200:ok
+[root@12-1-0-253 ~]# 
 ```
 
