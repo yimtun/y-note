@@ -91,6 +91,8 @@
 
 ### k8s1.23.5 [2022-04-19](Network/kubernetes-network/2022-04-19.md)
 
+## iptables [iptables](Network/iptables/iptables.md)
+
 
 
 
@@ -118,9 +120,35 @@
 
 ### cilium-vxlan-HostRoutingbpf [cilium-vxlan-HostRoutingbpf](Kubernetes/quickStart/cilium-vxlan-HostRoutingbpf/cilium-vxlan-HostRoutingbpf.md)
 
+### calico-ipip [calico-ipip](Kubernetes/quickStart/calico-ipip/calico-ipip.md)
+
+### calico-bgp-Cross-subnet [calico-bgp-Cross-subnet](Kubernetes/quickStart/calico-bgp-Cross-subnet/calico-bgp-Cross-subnet.md)
 
 
 
+
+
+
+
+
+
+
+
+# cluster-manager
+
+
+
+
+
+
+
+## lvs [lvs](cluster-manager/lvs/lvs.md)
+
+
+
+
+
+## pacemaker
 
 
 
@@ -175,6 +203,10 @@ docker run -d  -p 80:80 --privileged yimtune/centos79 /usr/sbin/init
 
 
 ## network [network](Self-questioning/network/network.md)
+
+### memory [memory](Self-questioning/memory/memory.md)
+
+## https-and-certificate [https-and-certificate](Self-questioning/https-and-certificate/https-and-certificate.md)
 
 
 

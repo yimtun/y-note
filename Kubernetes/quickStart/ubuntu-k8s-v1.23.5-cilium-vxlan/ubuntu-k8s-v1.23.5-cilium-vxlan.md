@@ -1389,7 +1389,493 @@ https://developers.redhat.com/blog/2018/10/22/introduction-to-linux-interfaces-f
 
 
 
+# extra
 
 
 
+```
+kubeadm init  \
+--apiserver-advertise-address=172.16.100.13 \
+--kubernetes-version=v1.23.5 \
+--service-cidr=10.96.0.0/12 \
+--pod-network-cidr=10.244.0.0/16 \
+--node-name=172.16.100.13 \
+```
+
+
+
+
+
+
+
+
+
+```
+kubeadm config print init-defaults
+kubeadm config print init-defaults 
+```
+
+
+
+
+
+```
+apiVersion: kubeadm.k8s.io/v1beta3
+bootstrapTokens:
+- groups:
+  - system:bootstrappers:kubeadm:default-node-token
+  token: abcdef.0123456789abcdef
+  ttl: 24h0m0s
+  usages:
+  - signing
+  - authentication
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: 1.2.3.4
+  bindPort: 6443
+nodeRegistration:
+  criSocket: /var/run/dockershim.sock
+  imagePullPolicy: IfNotPresent
+  name: node
+  taints: null
+---
+apiServer:
+  timeoutForControlPlane: 4m0s
+apiVersion: kubeadm.k8s.io/v1beta3
+certificatesDir: /etc/kubernetes/pki
+clusterName: kubernetes
+controllerManager: {}
+dns: {}
+etcd:
+  local:
+    dataDir: /var/lib/etcd
+imageRepository: k8s.gcr.io
+kind: ClusterConfiguration
+kubernetesVersion: 1.23.0
+networking:
+  dnsDomain: cluster.local
+  serviceSubnet: 10.96.0.0/12
+scheduler: {}
+```
+
+
+
+```
+kubectl get configMap kubeadm-config -o yaml --namespace=kube-system
+```
+
+
+
+```
+apiVersion: v1
+data:
+  ClusterConfiguration: |
+    apiServer:
+      extraArgs:
+        authorization-mode: Node,RBAC
+      timeoutForControlPlane: 4m0s
+    apiVersion: kubeadm.k8s.io/v1beta3
+    certificatesDir: /etc/kubernetes/pki
+    clusterName: kubernetes
+    controllerManager: {}
+    dns: {}
+    etcd:
+      local:
+        dataDir: /var/lib/etcd
+    imageRepository: k8s.gcr.io
+    kind: ClusterConfiguration
+    kubernetesVersion: v1.23.5
+    networking:
+      dnsDomain: cluster.local
+      podSubnet: 10.244.0.0/16
+      serviceSubnet: 10.96.0.0/12
+    scheduler: {}
+kind: ConfigMap
+metadata:
+  creationTimestamp: "2022-06-09T02:33:48Z"
+  name: kubeadm-config
+  namespace: kube-system
+  resourceVersion: "211"
+  uid: 1e0f3e01-3759-4dd0-8e32-2962bf342089
+```
+
+
+
+```
+modprobe -- ip_vs
+modprobe -- ip_vs_rr
+modprobe -- ip_vs_wrr
+modprobe -- ip_vs_sh
+modprobe -- nf_conntrack
+```
+
+
+
+
+
+
+
+#  修改ip vs
+
+
+
+```
+apt-get  install ipvsadm
+apt install ipset
+```
+
+
+
+```
+modprobe -- ip_vs
+modprobe -- ip_vs_rr
+modprobe -- ip_vs_wrr
+modprobe -- ip_vs_sh
+modprobe -- nf_conntrack
+```
+
+
+
+```
+kubectl edit configmap kube-proxy -n kube-system
+```
+
+
+
+```
+ 42     kind: KubeProxyConfiguration
+ 43     metricsBindAddress: ""
+ 44     mode: "ipvs"
+```
+
+
+
+```
+```
+
+
+
+
+
+```
+ kubectl  delete  pod  -n kube-system  -l k8s-app=kube-proxy
+```
+
+
+
+
+
+
+
+```
+iptables -t filter  -F
+iptables -t nat  -F
+iptables -t mangle -F
+```
+
+
+
+
+
+
+
+# ipset
+
+
+
+```
+root@node-172-16-100-13:~#  kubectl  -n kube-system exec -it  kube-proxy-wj779  --  ipset list
+Name: KUBE-LOAD-BALANCER-LOCAL
+Type: hash:ip,port
+Revision: 6
+Header: family inet hashsize 1024 maxelem 65536 bucketsize 12 initval 0xd4dc3883
+Size in memory: 200
+References: 0
+Number of entries: 0
+Members:
+
+Name: KUBE-LOAD-BALANCER-SOURCE-IP
+Type: hash:ip,port,ip
+Revision: 6
+Header: family inet hashsize 1024 maxelem 65536 bucketsize 12 initval 0x16a149d9
+Size in memory: 208
+References: 0
+Number of entries: 0
+Members:
+
+Name: KUBE-NODE-PORT-SCTP-HASH
+Type: hash:ip,port
+Revision: 6
+Header: family inet hashsize 1024 maxelem 65536 bucketsize 12 initval 0x5d488e34
+Size in memory: 200
+References: 0
+Number of entries: 0
+Members:
+
+Name: KUBE-CLUSTER-IP
+Type: hash:ip,port
+Revision: 6
+Header: family inet hashsize 1024 maxelem 65536 bucketsize 12 initval 0x0c31ac7a
+Size in memory: 392
+References: 2
+Number of entries: 4
+Members:
+10.96.0.10,tcp:9153
+10.96.0.10,udp:53
+10.96.0.10,tcp:53
+10.96.0.1,tcp:443
+
+Name: KUBE-EXTERNAL-IP-LOCAL
+Type: hash:ip,port
+Revision: 6
+Header: family inet hashsize 1024 maxelem 65536 bucketsize 12 initval 0xf453ecec
+Size in memory: 200
+References: 0
+Number of entries: 0
+Members:
+
+Name: KUBE-LOAD-BALANCER
+Type: hash:ip,port
+Revision: 6
+Header: family inet hashsize 1024 maxelem 65536 bucketsize 12 initval 0x4193d887
+Size in memory: 200
+References: 0
+Number of entries: 0
+Members:
+
+Name: KUBE-NODE-PORT-LOCAL-SCTP-HASH
+Type: hash:ip,port
+Revision: 6
+Header: family inet hashsize 1024 maxelem 65536 bucketsize 12 initval 0x45d891a0
+Size in memory: 200
+References: 0
+Number of entries: 0
+Members:
+
+Name: KUBE-LOAD-BALANCER-FW
+Type: hash:ip,port
+Revision: 6
+Header: family inet hashsize 1024 maxelem 65536 bucketsize 12 initval 0x5de13b56
+Size in memory: 200
+References: 0
+Number of entries: 0
+Members:
+
+Name: KUBE-LOAD-BALANCER-SOURCE-CIDR
+Type: hash:ip,port,net
+Revision: 8
+Header: family inet hashsize 1024 maxelem 65536 bucketsize 12 initval 0xb44e76e7
+Size in memory: 464
+References: 0
+Number of entries: 0
+Members:
+
+Name: KUBE-NODE-PORT-TCP
+Type: bitmap:port
+Revision: 3
+Header: range 0-65535
+Size in memory: 8264
+References: 0
+Number of entries: 0
+Members:
+
+Name: KUBE-NODE-PORT-UDP
+Type: bitmap:port
+Revision: 3
+Header: range 0-65535
+Size in memory: 8264
+References: 0
+Number of entries: 0
+Members:
+
+Name: KUBE-HEALTH-CHECK-NODE-PORT
+Type: bitmap:port
+Revision: 3
+Header: range 0-65535
+Size in memory: 8264
+References: 1
+Number of entries: 0
+Members:
+
+Name: KUBE-LOOP-BACK
+Type: hash:ip,port,ip
+Revision: 6
+Header: family inet hashsize 1024 maxelem 65536 bucketsize 12 initval 0x1c793107
+Size in memory: 208
+References: 0
+Number of entries: 0
+Members:
+
+Name: KUBE-EXTERNAL-IP
+Type: hash:ip,port
+Revision: 6
+Header: family inet hashsize 1024 maxelem 65536 bucketsize 12 initval 0x13b8c57f
+Size in memory: 200
+References: 0
+Number of entries: 0
+Members:
+
+Name: KUBE-NODE-PORT-LOCAL-TCP
+Type: bitmap:port
+Revision: 3
+Header: range 0-65535
+Size in memory: 8264
+References: 0
+Number of entries: 0
+Members:
+
+Name: KUBE-NODE-PORT-LOCAL-UDP
+Type: bitmap:port
+Revision: 3
+Header: range 0-65535
+Size in memory: 8264
+References: 0
+Number of entries: 0
+Members:
+
+Name: KUBE-6-HEALTH-CHECK-NODE-PORT
+Type: bitmap:port
+Revision: 3
+Header: range 0-65535
+Size in memory: 8264
+References: 1
+Number of entries: 0
+Members:
+
+Name: KUBE-6-EXTERNAL-IP
+Type: hash:ip,port
+Revision: 6
+Header: family inet6 hashsize 1024 maxelem 65536 bucketsize 12 initval 0x40c168d6
+Size in memory: 216
+References: 0
+Number of entries: 0
+Members:
+
+Name: KUBE-6-NODE-PORT-LOCAL-UDP
+Type: bitmap:port
+Revision: 3
+Header: range 0-65535
+Size in memory: 8264
+References: 0
+Number of entries: 0
+Members:
+
+Name: KUBE-6-LOAD-BALANCER-SOURCE-IP
+Type: hash:ip,port,ip
+Revision: 6
+Header: family inet6 hashsize 1024 maxelem 65536 bucketsize 12 initval 0xc1c014b9
+Size in memory: 232
+References: 0
+Number of entries: 0
+Members:
+
+Name: KUBE-6-NODE-PORT-SCTP-HASH
+Type: hash:ip,port
+Revision: 6
+Header: family inet6 hashsize 1024 maxelem 65536 bucketsize 12 initval 0x105cb376
+Size in memory: 216
+References: 0
+Number of entries: 0
+Members:
+
+Name: KUBE-6-NODE-PORT-LOCAL-SCTP-HAS
+Type: hash:ip,port
+Revision: 6
+Header: family inet6 hashsize 1024 maxelem 65536 bucketsize 12 initval 0xded2c072
+Size in memory: 216
+References: 0
+Number of entries: 0
+Members:
+
+Name: KUBE-6-CLUSTER-IP
+Type: hash:ip,port
+Revision: 6
+Header: family inet6 hashsize 1024 maxelem 65536 bucketsize 12 initval 0x93e4894f
+Size in memory: 216
+References: 0
+Number of entries: 0
+Members:
+
+Name: KUBE-6-LOAD-BALANCER
+Type: hash:ip,port
+Revision: 6
+Header: family inet6 hashsize 1024 maxelem 65536 bucketsize 12 initval 0x5c1e741d
+Size in memory: 216
+References: 0
+Number of entries: 0
+Members:
+
+Name: KUBE-6-LOAD-BALANCER-FW
+Type: hash:ip,port
+Revision: 6
+Header: family inet6 hashsize 1024 maxelem 65536 bucketsize 12 initval 0x1be0ae58
+Size in memory: 216
+References: 0
+Number of entries: 0
+Members:
+
+Name: KUBE-6-NODE-PORT-TCP
+Type: bitmap:port
+Revision: 3
+Header: range 0-65535
+Size in memory: 8264
+References: 0
+Number of entries: 0
+Members:
+
+Name: KUBE-6-NODE-PORT-LOCAL-TCP
+Type: bitmap:port
+Revision: 3
+Header: range 0-65535
+Size in memory: 8264
+References: 0
+Number of entries: 0
+Members:
+
+Name: KUBE-6-LOOP-BACK
+Type: hash:ip,port,ip
+Revision: 6
+Header: family inet6 hashsize 1024 maxelem 65536 bucketsize 12 initval 0xed523b6a
+Size in memory: 232
+References: 0
+Number of entries: 0
+Members:
+
+Name: KUBE-6-EXTERNAL-IP-LOCAL
+Type: hash:ip,port
+Revision: 6
+Header: family inet6 hashsize 1024 maxelem 65536 bucketsize 12 initval 0x3dc10ff5
+Size in memory: 216
+References: 0
+Number of entries: 0
+Members:
+
+Name: KUBE-6-NODE-PORT-UDP
+Type: bitmap:port
+Revision: 3
+Header: range 0-65535
+Size in memory: 8264
+References: 0
+Number of entries: 0
+Members:
+
+Name: KUBE-6-LOAD-BALANCER-LOCAL
+Type: hash:ip,port
+Revision: 6
+Header: family inet6 hashsize 1024 maxelem 65536 bucketsize 12 initval 0x0b16a2f0
+Size in memory: 216
+References: 0
+Number of entries: 0
+Members:
+
+Name: KUBE-6-LOAD-BALANCER-SOURCE-CID
+Type: hash:ip,port,net
+Revision: 8
+Header: family inet6 hashsize 1024 maxelem 65536 bucketsize 12 initval 0xcb6848f3
+Size in memory: 1256
+References: 0
+Number of entries: 0
+Members:
+root@node-172-16-100-13:~# 
+```
 

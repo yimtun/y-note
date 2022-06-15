@@ -2529,7 +2529,7 @@ https://isovalent.com/blog/post/2022-05-03-servicemesh-security
 
 
 
-## 14  2022-05-11
+## 14  2022-05-11-calico-pass
 
 
 
@@ -2538,10 +2538,6 @@ calico
 
 
 https://projectcalico.docs.tigera.io/getting-started/kubernetes/quickstart
-
-
-
-01:19
 
 
 
@@ -2555,6 +2551,489 @@ calicoctl  node status  --allow-version-mismatch
 
 
 
+```
+ospf bgp 
+```
+
+
+
+
+
+
+
+https://projectcalico.docs.tigera.io/maintenance/troubleshoot/vpp
+
+
+
+
+
+vpp+dpdk
+
+
+
+
+
+```
+ecmp 
+```
+
+
+
+
+
+https://projectcalico.docs.tigera.io/reference/architecture/design/l3-interconnect-fabric
+
+
+
+
+
+ospf/bgp  + ensp 
+
+
+
+calico  基础架构
+
+
+
+
+
+https://projectcalico.docs.tigera.io/getting-started/kubernetes/self-managed-onprem/onpremises#install-calico
+
+
+
+https://projectcalico.docs.tigera.io/getting-started/kubernetes/self-managed-onprem/onpremises#install-calico-with-kubernetes-api-datastore-50-nodes-or-less
+
+
+
+```
+curl https://projectcalico.docs.tigera.io/manifests/calico.yaml -O
+kubectl apply -f calico.yaml
+```
+
+
+
+
+
+
+
+
+
+```
+cat >  kind-ex.yaml   <<  EOF
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+        - role: control-plane
+        - role: worker
+        - role: worker
+networking:
+        disableDefaultCNI: true
+        kubeProxyMode: "ipvs"
+EOF
+```
+
+
+
+
+
+
+
+
+
+```
+kind create cluster --config ./kind-ex.yaml  --name calico  --image kindest/node:v1.23.4
+```
+
+
+
+```
+kubectl get pod -A  --context kind-calico
+```
+
+
+
+```
+kubectl apply -f calico.yaml  --context kind-calico
+```
+
+
+
+
+
+```
+kubectl  api-resources   --context kind-calico  |  grep ipam
+ipamblocks                                     crd.projectcalico.org/v1               false        IPAMBlock
+ipamconfigs                                    crd.projectcalico.org/v1               false        IPAMConfig
+ipamhandles                                    crd.projectcalico.org/v1               false        IPAMHandle
+root@172-16-100-7:~# 
+
+
+kubectl  api-resources   --context kind-calico  |  grep ippools
+ippools                                        crd.projectcalico.org/v1               false        IPPool
+```
+
+
+
+
+
+
+
+```
+ps -ef | grep bird
+root      576388  576293  0 20:50 ?        00:00:00 runsv bird
+root      576390  576293  0 20:50 ?        00:00:00 runsv bird6
+root      576829  576390  0 20:50 ?        00:00:01 bird6 -R -s /var/run/calico/bird6.ctl -d -c /etc/calico/confd/config/bird6.cfg
+```
+
+
+
+
+
+
+
+## 15 2022-05-13-calico-pass
+
+
+
+calico-ipip
+
+
+
+
+
+开启IPIP 禁用 vxlan
+
+
+
+https://projectcalico.docs.tigera.io/reference/node/configuration
+
+
+
+
+
+
+
+```
+            # Enable IPIP
+            - name: CALICO_IPV4POOL_IPIP
+              value: "Always"
+            # Enable or Disable VXLAN on the default IP pool.
+            - name: CALICO_IPV4POOL_VXLAN
+              value: "Never"
+            # Enable or Disable VXLAN on the default IPv6 IP pool.
+            - name: CALICO_IPV6POOL_VXLAN
+              value: "Never"
+```
+
+
+
+calicoctl install
+
+
+
+```
+curl -L https://github.com/projectcalico/calico/releases/download/v3.23.1/calicoctl-linux-amd64 -o calicoctl
+```
+
+
+
+
+
+```
+  Valid resource types are:
+
+    * bgpConfiguration
+    * bgpPeer
+    * felixConfiguration
+    * globalNetworkPolicy
+    * globalNetworkSet
+    * hostEndpoint
+    * ipPool
+    * ipReservation
+    * kubeControllersConfiguration
+    * networkPolicy
+    * networkSet
+    * node
+    * profile
+    * workloadEndpoint
+```
+
+
+
+```
+calicoctl   get workloadEndpoint -o wide -A
+```
+
+
+
+
+
+
+
+```
+ee:ee:ee:ee:ee:ee
+```
+
+
+
+```
+calicoctl   get wep -o wide -A
+```
+
+
+
+
+
+
+
+
+
+```
+cat > test-nginx.yaml <<EOF
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx01
+spec:
+  containers:
+  - name: nginx
+    image: yimtune/nginx:1.21.6
+    imagePullPolicy: IfNotPresent
+    ports:
+    - containerPort: 80
+EOF
+```
+
+
+
+
+
+```
+kubectl apply  -f test-nginx.yaml
+```
+
+
+
+```
+kubectl   exec -it nginx01  --  route -n
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+0.0.0.0         169.254.1.1     0.0.0.0         UG    0      0        0 eth0
+169.254.1.1     0.0.0.0         255.255.255.255 UH    0      0        0 eth0
+```
+
+
+
+
+
+https://projectcalico.docs.tigera.io/reference/faq#why-does-my-container-have-a-route-to-16925411
+
+
+
+
+
+
+
+```
+源IP 10.244.9.129/32 源mac ce:33:a7:1b:ba:db
+
+目的ip 114.114.114.114  目的mac ?? ee:ee:ee:ee:ee:ee
+```
+
+
+
+```
+kubectl   exec -it nginx01  --  arp -n
+Address                  HWtype  HWaddress           Flags Mask            Iface
+169.254.1.1              ether   ee:ee:ee:ee:ee:ee   C                     eth0
+172.18.0.2               ether   ee:ee:ee:ee:ee:ee   C                     eth0
+root@172-16-100-7:~# 
+
+
+kubectl   exec -it nginx01  --  arp -a
+? (169.254.1.1) at ee:ee:ee:ee:ee:ee [ether] on eth0
+calico-worker.kind (172.18.0.2) at ee:ee:ee:ee:ee:ee [ether] on eth0
+
+
+
+
+
+```
+
+
+
+
+
+### proxy arp
+
+
+
+
+
+![image-20220518152514277](kubernetes-network.assets/image-20220518152514277.png)
+
+
+
+
+
+pc1 pc2 位于同一个网络
+
+
+
+
+
+
+
+https://support.huawei.com/enterprise/zh/doc/EDOC1000178148/84487237/configuring-proxy-arp
+
+
+
+
+
+```
+AR3260
+
+sys
+
+
+int g0/0/0
+ip a 192.168.1.254 24
+
+
+int g0/0/1
+ip a 192.168.2.254 24
+
+
+
+
+[Huawei-GigabitEthernet0/0/1]dis ip int b
+*down: administratively down
+^down: standby
+(l): loopback
+(s): spoofing
+The number of interface that is UP in Physical is 3
+The number of interface that is DOWN in Physical is 1
+The number of interface that is UP in Protocol is 3
+The number of interface that is DOWN in Protocol is 1
+
+Interface                         IP Address/Mask      Physical   Protocol  
+GigabitEthernet0/0/0              192.168.1.254/24     up         up        
+GigabitEthernet0/0/1              192.168.2.254/24     up         up        
+GigabitEthernet0/0/2              unassigned           down       down      
+NULL0                             unassigned           up         up(s)     
+[Huawei-GigabitEthernet0/0/1]
+
+
+
+
+
+int g0/0/0
+arp-proxy enable
+
+int g0/0/1
+arp-proxy enable
+
+
+
+
+
+```
+
+
+
+linux
+
+
+
+```
+echo 1 > /proc/sys/net/ipv4/conf/eth0/proxy_arp
+```
+
+
+
+
+
+### mac ee:ee:ee:ee:ee:ee
+
+
+
+同节点 pod 通信
+
+
+
+```
+10.244.9.129/32   
+```
+
+
+
+两个个pod 32位掩码 不是同一网段   走路由 
+
+
+
+
+
+同节点pod 设备标记表
+
+
+
+|                 |                           |      |      |      |
+| --------------- | ------------------------- | ---- | ---- | ---- |
+| pod1-eht0       | pod1 eht0 网卡            |      |      |      |
+| pod1-eht0-ip    | pod1 eht0 网卡ip          |      |      |      |
+| pod1-eht0-mac   | pod1 eht0 网卡mac         |      |      |      |
+| pod1-gw-ip      | pod1 默认网关ip           |      |      |      |
+| pod1-gw-mac     | pod1 默认网关mac          |      |      |      |
+| pod1-calico-mac | pod1 eht0 对端设备网卡mac |      |      |      |
+| pod1-calico-ip  | pod1 eht0 对端设备网卡ip  |      |      |      |
+| pod1-calico     | pod1 eht0 对端设备网卡    |      |      |      |
+|                 |                           |      |      |      |
+|                 |                           |      |      |      |
+| pod2-eht0-ip    | pod2 eht0 网卡ip          |      |      |      |
+| pod2-eht0-mac   | pod2 eht0 网卡mac         |      |      |      |
+| pod2-gw-ip      | pod2 默认网关ip           |      |      |      |
+| pod2-gw-mac     | pod2 默认网关mac          |      |      |      |
+| pod2-calico-mac | pod2 eht0 对端设备网卡ip  |      |      |      |
+| pod2-calico-ip  | pod2 eht0 对端设备网卡mac |      |      |      |
+|                 |                           |      |      |      |
+|                 |                           |      |      |      |
+|                 |                           |      |      |      |
+
+
+
+
+
+### pod1-eht0-ip        ping       pod2-eht0-ip 过程
+
+
+
+```
+1 pod1-eht0-ip     pod2-eht0-ip   都是32位掩码 需要走网关  pod1-gw-ip  四元组见下
+
+源ip     pod1-eht0-ip   源mac    pod1-eht0-mac
+目的ip    pod2-eht0-ip  目的mac   pod1-gw-mac（不在一个网段，目的mac是下一跳mac）
+
+
+2  pod1本地没有缓存 pod1-gw-mac  从接口 pod1-eht0 发送arp 广播   请求 pod1-gw-ip 对应的mac
+
+
+3  pod1-calico 作为 pod1-eht0 的对端设备，被动的收到了 pod1-eht0设备发送的 arp 请求广播
+
+
+4  pod1-calico 设备开启了 arp-proxy      
+cat  /proc/sys/net/ipv4/conf/cali3362fc7d0e7/proxy_arp
+1
+
+pod1-calico 接口上并没有  pod1-gw-ip 但是此时pod1-calico具备返回自己mac地址的能力了
+
+疑问？？？
+
+虽然开启了 proxy_arp 但也需要在自己可达目的ip的情况下才能返回
+这里没有任何设备有这个  pod1-gw-ip  为什么还允许  pod1-calico返回自己的mac呢
+
+
+
+```
 
 
 
@@ -2566,4 +3045,1630 @@ calicoctl  node status  --allow-version-mismatch
 
 
 
+
+
+
+
+
+
+
+
+
+
+## 16 2022-03-15-calico-pass
+
+
+
+https://projectcalico.docs.tigera.io/networking/vxlan-ipip#configure-ip-in-ip-encapsulation-for-all-inter-workload-traffic
+
+
+
+```
+当ipipMode设置为Always时，Calico将来自启用Calico的主机的所有流量使用IP-in-IP路由到IP池中的所有Calico网络容器和VM。
+```
+
+
+
+
+
+
+
+```
+calicoctl  get ippool -o wide
+kubectl api-resouce | grep calico
+
+calicoctl get ippool -o yaml
+ipipMode: Always
+vxlanMode: Never
+natOutgoing: true 出公网 使用nat
+
+nodeSelector: all()
+
+blockSize: 26  26位掩码
+一个24位掩码的网络可以分成4个26位掩码的网络
+
+00
+01
+10
+11
+
+路由聚合 
+
+
+```
+
+
+
+
+
+ipip 需要 用bgp技术
+
+
+
+```
+Calico’s IP in IP implementation uses BGP between Calico nodes.
+```
+
+
+
+
+
+```
+calicoctl node status
+```
+
+
+
+
+
+ns  演示直连路由
+
+交换路由 ： 网关都是0        0.0.0.0
+
+
+
+```
+ip tunnel add 
+```
+
+
+
+```
+tcpdump
+link-type RAW    (RAW IP)
+link-type EN10MB (Ethernet)
+
+Raw packet data
+```
+
+
+
+
+
+linux ipip
+
+```
+tun/tap ？？？
+
+
+tun 只有ip 没有mac
+
+
+tun /用户空间 内核空间？？ 
+
+```
+
+
+
+calico ipip
+
+not save node  pod 
+
+
+
+```
+ip -d link show tanl0
+ipip 
+```
+
+
+
+```
+route -n
+
+
+ destination       gateway           genmask         interface
+10.244.200.192    172.16.1.12      255.255.255.192     tunl0
+```
+
+
+
+```
+tcpdump 观察 mac 剥离点
+```
+
+
+
+
+
+## 17 2022-05-16-calico-pass
+
+
+
+vxlan
+
+
+
+### ensp vxlan
+
+
+
+
+
+https://support.huawei.com/enterprise/zh/doc/EDOC1000178185/4fef8bd9
+
+
+
+
+
+![image-20220520105237368](kubernetes-network.assets/image-20220520105237368.png)
+
+
+
+
+
+
+
+
+
+
+
+
+
+| 设备名  |      |      |      |      |      |      |      |      |      |      |      |      |      |      |      |      |      |      |      |
+| ------- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
+| CE12800 |      |      |      |      |      |      |      |      |      |      |      |      |      |      |      |      |      |      |      |
+| S5700   |      |      |      |      |      |      |      |      |      |      |      |      |      |      |      |      |      |      |      |
+|         |      |      |      |      |      |      |      |      |      |      |      |      |      |      |      |      |      |      |      |
+|         |      |      |      |      |      |      |      |      |      |      |      |      |      |      |      |      |      |      |      |
+|         |      |      |      |      |      |      |      |      |      |      |      |      |      |      |      |      |      |      |      |
+
+
+
+
+
+#### 配置  lsw1     lsw2
+
+```
+LSW1
+
+sys
+sysname LSW1
+
+创建vlan  10
+
+vlan 10  // 创建vlan10 
+q        // 退出
+
+int g0/0/2
+port link-type access
+port default vlan  10
+
+
+
+int g0/0/1
+port link-type trunk
+port trunk  allow-pass vlan all
+
+
+
+
+
+
+LSW2
+sys
+sysname LSW2
+
+
+```
+
+
+
+
+
+
+
+##### 配置  CE1 CE2  互联IP
+
+
+
+
+
+```
+CE1
+
+system-view immediately
+sysname CE1
+
+
+int GE 1/0/1
+
+
+开启端口
+[CE1-GE1/0/1]undo shutdown 
+
+
+将该端口变成3层的 把二层口配置成三层口 否则后面无法配置ip
+undo portswitch
+
+
+
+配置ip
+
+[CE1-GE1/0/1]ip a 10.1.1.1 24
+[CE1-GE1/0/1]dis thi
+#
+interface GE1/0/1
+ undo portswitch
+ undo shutdown
+ ip address 10.1.1.1 255.255.255.0
+#
+return
+[CE1-GE1/0/1]
+
+```
+
+
+
+
+
+
+
+```
+CE2
+
+system-view immediately
+sysname CE2
+
+
+int GE 1/0/1
+
+
+开启端口
+[CE1-GE1/0/1]undo shutdown 
+
+将该端口变成3层的 把二层口配置成三层口 否则后面无法配置ip
+undo portswitch
+
+
+
+配置ip
+
+ip a 10.1.1.2 24
+
+
+[CE2-GE1/0/1]dis thi
+#
+interface GE1/0/1
+ undo portswitch
+ undo shutdown
+ ip address 10.1.1.2 255.255.255.0
+#
+return
+[CE2-GE1/0/1]
+```
+
+
+
+
+
+
+
+```
+dis ip int b
+```
+
+
+
+
+
+
+
+
+
+##### CE1 CE2 配置loopback
+
+
+
+
+
+```
+CE1 配置 LO
+
+system-view immediately 
+int LoopBack0   // int l0
+
+ip a 1.1.1.1 32
+```
+
+
+
+
+
+```
+CE2 配置 LO
+
+
+system-view immediately 
+int LoopBack0   // int l0
+
+ip a 2.2.2.2  32
+
+```
+
+
+
+
+
+
+
+
+
+##### 配置 CE1 CE2   ospf  使回环口互通
+
+
+
+```
+CE1 配置ospf
+system-view immediately 
+
+
+ospf 1 router-id  1.1.1.1
+
+宣告所有网络
+a 0
+network 0.0.0.0 255.255.255.255
+
+
+
+
+
+CE2 配置ospf
+system-view immediately 
+
+
+ospf 1 router-id  2.2.2.2
+
+宣告所有网络
+a 0
+network 0.0.0.0 255.255.255.255
+
+
+
+
+CE1 CE2 确认
+
+dis ospf peer  brief 
+
+互相ping lo0 是通的
+```
+
+
+
+
+
+
+
+
+
+
+
+#### 配置vlan 用的接口  允许 vlan 10 通过
+
+##### CE1
+
+```
+system-view  immediately 
+
+
+
+int g 1/0/0
+undo shutdown
+q
+
+
+
+bridge-domain 10
+vxlan vni 10
+
+
+
+int GE 1/0/0.10 mode l2
+
+
+int GE 1/0/0.10
+encapsulation dot1q vid 10
+
+
+bridge-domain  10
+
+
+[CE1-GE1/0/0.10]dis thi
+#
+interface GE1/0/0.10 mode l2
+ encapsulation dot1q vid 10
+ bridge-domain 10
+#
+return
+```
+
+
+
+
+
+##### CE2
+
+
+
+```
+system-view  immediately 
+
+
+
+int g 1/0/0
+undo shutdown
+q
+
+
+
+bridge-domain 10
+vxlan vni 10
+q
+
+
+int GE 1/0/0.10 mode l2
+
+encapsulation dot1q vid 10
+
+
+
+[CE1-GE1/0/0.10]bridge-domain  10
+
+
+[CE1-GE1/0/0.10]dis thi
+#
+interface GE1/0/0.10 mode l2
+ encapsulation dot1q vid 10
+ bridge-domain 10
+#
+return
+```
+
+
+
+
+
+#### 配置vxlan
+
+
+
+
+
+```
+CE1
+
+system-view  immediately 
+
+int Nve 1
+
+source 1.1.1.1
+[CE1-Nve1]vni 10 head-end peer-list  2.2.2.2 // vni 10 是上一步定义的
+[CE1-Nve1]dis thi
+#
+interface Nve1
+ source 1.1.1.1
+ vni 10 head-end peer-list 2.2.2.2
+#
+return
+
+
+
+
+[CE1-Nve1]dis vxlan  vni 10 verbose 
+    BD ID                  : 10
+    State                  : up
+    NVE                    : 19
+    Source Address         : 1.1.1.1
+    Source IPv6 Address    : -
+    UDP Port               : 4789
+    BUM Mode               : head-end
+    Group Address          : -
+    Peer List              : 2.2.2.2 
+    IPv6 Peer List         : -
+[CE1-Nve1]
+
+
+
+
+
+
+
+CE2
+
+
+system-view  immediately 
+
+int Nve 1
+
+source 2.2.2.2
+[CE1-Nve1]vni 10 head-end peer-list  1.1.1.1 // vni 10 是上一步定义的
+[CE1-Nve1]dis thi
+#
+interface Nve1
+ source 2.2.2.2
+ vni 10 head-end peer-list 1.1.1.1
+#
+return
+
+
+
+
+
+
+[CE2-Nve1]dis vxlan vni 10 verbose 
+    BD ID                  : 10
+    State                  : up
+    NVE                    : 18
+    Source Address         : 2.2.2.2
+    Source IPv6 Address    : -
+    UDP Port               : 4789
+    BUM Mode               : head-end
+    Group Address          : -
+    Peer List              : 1.1.1.1 
+    IPv6 Peer List         : -
+[CE2-Nve1]
+
+
+
+
+```
+
+
+
+
+
+##### test 
+
+pc1 ping pc2
+
+pc2 ping pc1
+
+
+
+
+
+
+
+
+
+###  calico-vxlan-always
+
+
+
+
+
+https://projectcalico.docs.tigera.io/networking/vxlan-ipip#configure-vxlan-encapsulation-for-all-inter-workload-traffic
+
+
+
+
+
+https://projectcalico.docs.tigera.io/getting-started/kubernetes/managed-public-cloud/eks#install-eks-with-calico-networking
+
+
+
+
+
+
+
+```
+kubectl apply -f https://projectcalico.docs.tigera.io/manifests/calico-vxlan.yaml
+```
+
+
+
+
+
+
+
+
+
+https://projectcalico.docs.tigera.io/getting-started/kubernetes/installation/config-options#switching-from-ip-in-ip-to-vxlan
+
+
+
+
+
+
+
+- Replace `calico_backend: "bird"` with `calico_backend: "vxlan"`.
+
+去掉bird 健康检查
+
+```
+Comment out the line - -bird-ready and - -bird-live 
+```
+
+
+
+
+
+
+
+不同节点 pod
+
+
+
+vxlan 不用bgp
+
+```
+calicoctl node status
+None of the BGP backend processes (BIRD or GoBGP) are running
+```
+
+
+
+
+
+梳理表格
+
+
+
+vxlan 设备
+
+节点路由表
+
+
+
+```
+calicoctl get wep -o wide
+tcpdump -pne xxx
+
+vxlan 源端口0 代表随机？
+```
+
+
+
+
+
+
+
+```
+fdb表
+iptables 表
+路由表
+arp 表
+```
+
+
+
+
+
+## 18 2022-05-18-calico-pass
+
+
+
+
+
+https://projectcalico.docs.tigera.io/networking/bgp
+
+
+
+#### bgp full mesh
+
+
+
+
+
+#### bgp  反射器
+
+
+
+https://support.huawei.com/enterprise/zh/doc/EDOC1000178149/c3e1df01
+
+
+
+ospf
+
+https://support.huawei.com/enterprise/zh/doc/EDOC1100082073
+
+
+
+
+
+水平分割
+
+
+
+
+
+50:00
+
+
+
+
+
+```
+AR2240
+```
+
+
+
+
+
+
+
+### ibgp+ebgp
+
+
+
+![image-20220520151243039](kubernetes-network.assets/image-20220520151243039.png)
+
+
+
+####  配置ip
+
+```
+## AR1
+sys
+sysname AR1
+int g 0/0/0
+ip a 10.1.12.1 24
+
+
+int l0
+ip a 1.1.1.1 32
+
+
+## AR2
+sys
+sysname AR2
+int g 0/0/0
+ip a 10.1.12.2 24
+
+
+int l0
+ip a 2.2.2.2 32
+
+
+
+int g 0/0/1
+ip a 10.1.23.1 24
+
+
+
+
+## AR3
+sys
+sysname AR3
+int g 0/0/0
+ip a 10.1.23.2 24
+
+
+int l0
+ip a 3.3.3.3  32
+
+
+
+int g 0/0/1
+ip a 10.1.34.1  24
+
+
+
+## AR4
+sys
+sysname AR4
+int g 0/0/0
+ip a 10.1.34.2 24
+
+```
+
+
+
+
+
+####  配置ospf
+
+
+
+
+
+```
+AR1
+
+sys
+ospf 1 router-id  1.1.1.1
+a 0.0.0.0
+network 1.1.1.1 0.0.0.0      ## 宣告 1.1.1.1/32
+network 10.1.12.0 0.0.0.255  ## 宣告 10.1.12.0/24
+
+
+
+
+AR2
+
+sys
+ospf 1 router-id 2.2.2.2
+a 0.0.0.0
+network 2.2.2.2 0.0.0.0
+network 10.1.12.0 0.0.0.255
+network 10.1.23.0 0.0.0.255
+
+
+
+
+
+AR3
+
+sys
+ospf 1 router-id  3.3.3.3
+a 0.0.0.0
+network 10.1.23.0 0.0.0.255
+network 3.3.3.3   0.0.0.0
+
+
+AR1 AR2 AR3 查看ospf 状态
+
+dis ospf peer  brief 
+
+
+```
+
+
+
+
+
+#### AR1 AR2 IBGP
+
+
+
+```
+# AR1
+
+sys
+bgp 123
+
+router-id 1.1.1.1
+peer 3.3.3.3 as-number 123
+peer 3.3.3.3 connect-interface l0
+
+
+
+
+# AR3
+
+sys
+bgp 123
+
+router-id 3.3.3.3
+peer 1.1.1.1 as-number 123
+peer 1.1.1.1 connect-interface l0
+
+
+
+# AR1 AR3 
+
+dis bgp peer
+
+
+
+
+# 测试bgp 宣告路由
+AR3 
+
+环回口1 设置ip
+int l1
+ip a 66.66.66.66 32
+
+通过bgp 宣告路由
+
+bgp 123
+network 66.66.66.66 255.255.255.255
+
+查看bgp 路由条目
+
+dis bgp routing-table
+
+
+AR1 查看是否有对应路由条目
+dis bgp routing-table
+
+```
+
+
+
+
+
+
+
+```
+dis ip routing-table
+```
+
+
+
+
+
+```
+路由条目引入???
+```
+
+
+
+
+
+#### AR3 AR4 EBGP
+
+
+
+```
+# AR3
+sys
+bgp 123
+peer  10.1.34.2 as-number 400
+
+
+
+
+
+# AR4
+
+
+sys
+bgp 400
+router-id 10.1.34.2
+peer  10.1.34.1 as-number 123
+
+
+
+
+dis bgp peer
+
+```
+
+
+
+
+
+
+
+```
+brid 命令后
+show route
+```
+
+
+
+
+
+
+
+## 19 2020-05-20-calico-pass
+
+
+
+calico bgp full mesh
+
+
+
+```
+calicoctl get ippool -o wide
+ipipmode   never
+vxlanmode  never
+
+
+
+
+
+（在一个自治系统才存在水平分割）
+由于水平分割 所以需要full mesh
+
+full mesh 条件
+
+1 host 二层可达？？  tcp/170 可达。 满足  full mesh
+
+
+
+calico-node
+birdcl
+show ?
+show interface
+show route
+show route for 10.244.200.192 all
+
+
+
+calicoctl get ippool -o wide
+cidr 10.244.0.0/16  每26个是一个块 ？？ 路由聚合？？
+
+
+name                   cidr             nat    ipipmode   vxlanmode   disabled      sleector
+default-ipv4-ippool   10.244.0.0/16    true      never       never      false        all()
+
+
+禁用
+
+kubectl edit ippool default-ipv4-ippool
+disabled: true
+
+pod 获取不到地址
+
+
+calicoctl get xx -o yaml xx.yaml
+calicoctl path xx
+
+
+查看bird 配置文件
+
+/etc/calico/confd/config/bird.cfg
+```
+
+
+
+
+
+## 20 2020-05-22-calico-pass
+
+
+
+
+
+https://projectcalico.docs.tigera.io/reference/vpp/uplink-configuration
+
+
+
+
+
+路由反射器
+
+
+
+
+
+
+
+
+
+
+
+```
+路由反射器之间形成 full mesh
+
+AR2 -> bgp rr
+
+rr 指定  路由反射器client
+
+br2
+
+bgp 123
+peer 1.1.1.1 reflect-client
+peer 3.3.3.3 reflect-client
+
+
+ar3
+宣告bgp 路由
+
+ar1
+宣告bgp 路由
+
+
+迭代查询 
+
+路由转发路径 
+
+
+
+```
+
+
+
+
+
+
+
+```
+ensp AR2240
+```
+
+
+
+路由反射器
+
+
+
+
+
+https://support.huawei.com/enterprise/zh/doc/EDOC1100058307/a2762e21/configguring-a-bgp-route-reflector
+
+
+
+https://www.cisco.com/c/zh_cn/support/docs/ip/border-gateway-protocol-bgp/113419-ipv6-bgp-rr-00.pdf
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+https://projectcalico.docs.tigera.io/reference/architecture/design/l2-interconnect-fabric
+
+
+
+https://projectcalico.docs.tigera.io/reference/architecture/design/l3-interconnect-fabric
+
+
+
+
+
+
+
+
+
+### calico-router reflector
+
+
+
+https://projectcalico.docs.tigera.io/getting-started/kubernetes/hardway/configure-bgp-peering
+
+
+
+
+
+https://projectcalico.docs.tigera.io/getting-started/kubernetes/hardway/configure-bgp-peering
+
+
+
+
+
+
+
+```
+关闭 ipipmode
+
+full-mesh
+
+
+
+peer address
+peer type 
+rr 指定 rr 的客户端
+
+node-to-node mesh  配置为 node specific
+
+
+
+calicoctl node status
+
+
+
+
+
+```
+
+
+
+
+
+##### 1  配置外部路由反射器
+
+
+
+https://projectcalico.docs.tigera.io/networking/bgp#configure-a-global-bgp-peer
+
+
+
+
+
+
+
+##### 2 讲某个node 作为路由反射器
+
+
+
+https://projectcalico.docs.tigera.io/networking/bgp#configure-a-node-to-act-as-a-route-reflector
+
+
+
+
+
+
+
+
+
+```
+ 给节点打标签 
+ 设置 routeReflectorClusterID	
+
+ https://projectcalico.docs.tigera.io/reference/resources/node
+ 
+ 配置 peer Kind: BGPeer
+ 
+ name peer-to-rrs   配置多个rr
+ 
+ 
+ 
+ 
+ 路由反射器客户端 到 路由反射器 peer 的建立
+calicoctl apply -f - <<EOF
+kind: BGPPeer
+apiVersion: projectcalico.org/v3
+metadata:
+  name: peer-to-rrs
+spec:
+  nodeSelector: "!has(calico-route-reflector)"   普通的IBGP对等体 非rr
+  peerSelector: has(calico-route-reflector)      路由反射器
+EOF                                              两者之间建立 peer
+
+```
+
+
+
+
+
+
+
+```
+1 关闭ipipmode 关闭vxlanmode
+
+
+
+rr client 角度
+calicoctl node status
+global
+
+
+rr 角度
+calicoctl node status
+peer type
+node specific
+```
+
+
+
+
+
+full-mesh-2-bgp-rr
+
+
+
+
+
+
+
+```
+组播地址
+
+routeReflectorClusterID: 224.0.0.1 
+所有主机的地址（包括所有路由器地址）
+```
+
+
+
+
+
+
+
+## 21 2022-05-23-calico
+
+
+
+
+
+
+
+https://projectcalico.docs.tigera.io/reference/architecture/design/l2-interconnect-fabric
+
+
+
+
+
+https://projectcalico.docs.tigera.io/reference/architecture/design/l3-interconnect-fabric
+
+
+
+
+
+
+
+
+
+```
+The Downward Default model
+只通告默认路由
+```
+
+
+
+
+
+
+
+```
+AR2240
+```
+
+
+
+1:21
+
+
+
+
+
+## 22 2022-05-25-calico-pass
+
+
+
+
+
+```
+vmware e1000
+vmxnet3 dpdk
+```
+
+
+
+
+
+
+
+https://projectcalico.docs.tigera.io/getting-started/kubernetes/vpp/
+
+
+
+
+
+
+
+https://projectcalico.docs.tigera.io/getting-started/kubernetes/vpp/getting-started
+
+
+
+
+
+
+
+
+
+
+
+ubuntu 5.11
+
+
+
+
+
+
+
+
+
+
+
+```
+vpp dataplane interface
+
+```
+
+
+
+
+
+
+
+```
+ethtool eht0
+
+speed 1000->10
+
+ip tuntap list
+eht0 : tap 变成tap设备了
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+https://slideplayer.com/slide/17437344
+
+
+
+
+
+![image-20220530103932295](kubernetes-network.assets/image-20220530103932295.png)
+
+
+
+
+
+
+
+https://suhu0426.github.io/Web/Presentation/20150203/index.html
+
+
+
+
+
+
+
+
+
+
+
+https://projectcalico.docs.tigera.io/reference/vpp/host-network
+
+
+
+
+
+
+
+
+
+https://projectcalico.docs.tigera.io/maintenance/troubleshoot/vpp
+
+
+
+
+
+
+
+```
+calivppctl vppctl node
+show interface
+
+
+两个eth0 mac 一样 并不冲突 因为不在一个协议栈中
+
+show ipip tunnel
+
+
+pod eth0 点对点 tun 设备
+
+route -n
+
+
+
+
+
+pcap trace rx tx 30000 intfc any
+
+pacp trace off
+
+
+
+ipip  always + vpp
+vxlan always + vpp
+
+
+show vxlan tunnel
+
+
+vpp 去程 回程
+
+
+
+宿主机  eth0 数据包流向
+
+eth0-> vpp tap0   -> 外部
+
+
+show tap
+```
+
+
+
+
+
+## 23-2022-05-27-calico-pass
+
+
+
+
+
+calico ipam
+
+
+
+```
+whereabouts
+```
+
+
+
+
+
+
+
+https://projectcalico.docs.tigera.io/networking/get-started-ip-addresses
+
+
+
+
+
+```
+/etc/cni/net.d/10-calico.conflist
+
+ipam
+type calico-ipam
+
+
+localhost???
+```
+
+
+
+
+
+
+
+```
+ippool 
+
+固定ip 地址 
+
+
+calico get ippool -i yaml
+
+
+
+指定固定IP
+```
+
+
+
+
+
+
+
+
+
+https://projectcalico.docs.tigera.io/networking/use-specific-ip
+
+
+
+
+
+
+https://cloud.ibm.com/docs/openshift?topic=openshift-ts-app-container-start&locale=es
+
+
+
+```
+calicoctl ipam check
+```
+
+
+
+
+
+
+
+## 24-2022-05-29-flannel
 
