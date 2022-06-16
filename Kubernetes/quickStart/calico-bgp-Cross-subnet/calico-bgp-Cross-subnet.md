@@ -1,3 +1,75 @@
+
+
+* [1 cluster network info](#1-cluster-network-info)
+   * [vmware net info](#vmware-net-info)
+   * [windows network info](#windows-network-info)
+   * [linux server net info](#linux-server-net-info)
+* [2   version info](#2---version-info)
+* [3 linux router](#3-linux-router)
+* [4  init cluster](#4--init-cluster)
+   * [master 11.1.0.250](#master-1110250)
+   * [node 11.1.0.251](#node-1110251)
+   * [node  12.1.0.252](#node--1210252)
+   * [node 12.1.0.253](#node-1210253)
+* [5 install calico](#5-install-calico)
+   * [install  calico cni](#install--calico-cni)
+   * [verify  no ipvlan and  no vxlan](#verify--no-ipvlan-and--no-vxlan)
+   * [verify node status ready](#verify-node-status-ready)
+   * [install calicoctl](#install-calicoctl)
+      * [get  bgp info](#get--bgp-info)
+* [6 delete  taint](#6-delete--taint)
+* [7 test pod network](#7-test-pod-network)
+   * [create deployment](#create-deployment)
+   * [create service](#create-service)
+   * [get info](#get-info)
+* [8  get  each  node  pod subnet](#8--get--each--node--pod-subnet)
+* [9  use static route  for pod network](#9--use-static-route--for-pod-network)
+   * [auto add pod route shell](#auto-add-pod-route-shell)
+      * [router linux  192.168.3.254](#router-linux--1921683254)
+   * [test pod ip  on router linux](#test-pod-ip--on-router-linux)
+   * [test pod ip  on router linux on  11.1.0.250](#test-pod-ip--on-router-linux-on--1110250)
+   * [test pod ip  on router linux on  12.1.0.252](#test-pod-ip--on-router-linux-on--1210252)
+   * [summary](#summary)
+* [10 bird as globalBgpReplaceStaticRoute](#10-bird-as-globalbgpreplacestaticroute)
+   * [on k8s cluster crate global bgp](#on-k8s-cluster-crate-global-bgp)
+   * [config external  ibgp peer](#config-external--ibgp-peer)
+      * [dell  static route for pod subnet](#dell--static-route-for-pod-subnet)
+      * [config bird ibgp](#config-bird-ibgp)
+   * [cat  bgp  status](#cat--bgp--status)
+   * [test pod subnet access each other](#test-pod-subnet-access-each-other)
+   * [stop external bird ibgp peer](#stop-external-bird-ibgp-peer)
+   * [start bird and get some info](#start-bird-and-get-some-info)
+      * [get  ibgp router info](#get--ibgp-router-info)
+* [11phsicalRouterReplaceBgpSoftwareBird](#11phsicalrouterreplacebgpsoftwarebird)
+   * [router linux shutdown](#router-linux-shutdown)
+   * [ensp config](#ensp-config)
+      * [cloud vmware vmnet11](#cloud-vmware-vmnet11)
+      * [cloud vmware vmnet12](#cloud-vmware-vmnet12)
+      * [cloud vmware vmnet13](#cloud-vmware-vmnet13)
+      * [router  AR2240](#router--ar2240)
+   * [config router ip](#config-router-ip)
+   * [before config bgp get bgp status](#before-config-bgp-get-bgp-status)
+   * [config ensp bgp](#config-ensp-bgp)
+   * [get calico bgp status](#get-calico-bgp-status)
+   * [test](#test)
+      * [recreate deployment](#recreate-deployment)
+      * [ensp router test](#ensp-router-test)
+      * [each node curl nginx pod](#each-node-curl-nginx-pod)
+* [12 use  bgp  when add a k8s node](#12-use--bgp--when-add-a-k8s-node)
+   * [add a k8s node   node  subnet vment11](#add-a-k8s-node---node--subnet-vment11)
+   * [node ip is  11.1.0.252](#node-ip-is--1110252)
+   * [bird  config  add  config for 11.1.0.252](#bird--config--add--config-for-1110252)
+* [13 monitor Etcd add static route](#13-monitor-etcd-add-static-route)
+   * [test etcd watch](#test-etcd-watch)
+      * [delete a node](#delete-a-node)
+      * [1 watch  是否有新节点加入](#1-watch--是否有新节点加入)
+      * [2 在指定节点上创建一个非host网络 类型的pod  触发分配pod subnet](#2-在指定节点上创建一个非host网络-类型的pod--触发分配pod-subnet)
+      * [3 watch etcd  对 confirmed  put 事件添加  路由](#3-watch-etcd--对-confirmed--put-事件添加--路由)
+* [14 testRoutesAggregation other linux](#14-testroutesaggregation-other-linux)
+
+
+
+
 # 1 cluster network info
 
 
@@ -134,7 +206,7 @@ target     prot opt source               destination
 
 
 
-# 2   version info
+# 2 version info
 
 
 
