@@ -70,6 +70,62 @@ master and node  access pubic network   example  get image resources    use  lin
 
 
 
+```
+[root@bgp-router ~]# ip a | grep eth
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
+    link/ether 00:0c:29:ff:ee:e8 brd ff:ff:ff:ff:ff:ff
+    inet 192.168.3.254/24 brd 192.168.3.255 scope global eth0
+3: eth1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
+    link/ether 00:0c:29:ff:ee:f2 brd ff:ff:ff:ff:ff:ff
+    inet 11.1.0.1/24 brd 11.1.0.255 scope global eth1
+4: eth2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
+    link/ether 00:0c:29:ff:ee:fc brd ff:ff:ff:ff:ff:ff
+    inet 12.1.0.1/24 brd 12.1.0.255 scope global eth2
+5: eth3: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
+    link/ether 00:0c:29:ff:ee:06 brd ff:ff:ff:ff:ff:ff
+    inet 13.1.0.1/24 brd 13.1.0.255 scope global eth3
+[root@bgp-router ~]# 
+
+
+[root@bgp-router ~]# route -n
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+0.0.0.0         192.168.3.1     0.0.0.0         UG    0      0        0 eth0
+11.1.0.0        0.0.0.0         255.255.255.0   U     0      0        0 eth1
+12.1.0.0        0.0.0.0         255.255.255.0   U     0      0        0 eth2
+13.1.0.0        0.0.0.0         255.255.255.0   U     0      0        0 eth3
+169.254.0.0     0.0.0.0         255.255.0.0     U     1002   0        0 eth0
+169.254.0.0     0.0.0.0         255.255.0.0     U     1003   0        0 eth1
+169.254.0.0     0.0.0.0         255.255.0.0     U     1004   0        0 eth2
+169.254.0.0     0.0.0.0         255.255.0.0     U     1005   0        0 eth3
+192.168.3.0     0.0.0.0         255.255.255.0   U     0      0        0 eth0
+[root@bgp-router ~]# 
+
+
+cat /proc/sys/net/ipv4/ip_forward
+1
+
+
+[root@bgp-router ~]# iptables -t nat -nL
+Chain PREROUTING (policy ACCEPT)
+target     prot opt source               destination         
+
+Chain INPUT (policy ACCEPT)
+target     prot opt source               destination         
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination         
+
+Chain POSTROUTING (policy ACCEPT)
+target     prot opt source               destination         
+[root@bgp-router ~]# 
+
+
+
+```
+
+
+
 
 
 
@@ -799,7 +855,7 @@ if  pod's   node is not  same subnet  pod use L3 by linux-router
 
 
 
-# 10  bird as globalBgpReplaceStaticRoute
+# 10 bird as globalBgpReplaceStaticRoute
 
 
 
@@ -1145,15 +1201,7 @@ IPv4 BGP status
 | 12.1.0.252   | node-to-node mesh | up    | 2022-06-14 | Established |
 | 12.1.0.253   | node-to-node mesh | up    | 2022-06-14 | Established |
 | 13.1.0.1     | global            | up    | 07:46:17   | Established |
-```
 
-
-
-
-
-
-
-```
 [root@11-1-0-251 ~]# calicoctl  node status
 Calico process is running.
 
@@ -1166,13 +1214,7 @@ IPv4 BGP status
 | 12.1.0.253   | node-to-node mesh | up    | 2022-06-14 | Established |
 | 13.1.0.1     | global            | up    | 07:46:16   | Established |
 +--------------+-------------------+-------+------------+-------------+
-```
 
-
-
-
-
-```
 [root@12-1-0-252 ~]#  calicoctl  node status
 Calico process is running.
 
@@ -1185,13 +1227,8 @@ IPv4 BGP status
 | 12.1.0.253   | node-to-node mesh | up    | 2022-06-14 | Established |
 | 13.1.0.1     | global            | up    | 07:46:15   | Established |
 +--------------+-------------------+-------+------------+-------------+
-```
 
 
-
-
-
-```
 [root@12-1-0-253 ~]# calicoctl  node status
 Calico process is running.
 
@@ -1205,6 +1242,12 @@ IPv4 BGP status
 | 13.1.0.1     | global            | up    | 07:46:16   | Established |
 +--------------+-------------------+-------+------------+-------------+
 ```
+
+
+
+
+
+
 
 
 
@@ -1224,6 +1267,17 @@ nginx-deployment-6f8cbdc6f5-wnbt5   1/1     Running   0          24h   10.244.22
 ```
 
 
+
+
+
+
+
+test command 
+
+```
+for line in `kubectl get pods -lapp=nginx -ogo-template --template='{{range .items}}{{printf "%s\n" .status.podIP}}{{end}}'`; do curl  -L -s -o /dev/null -w "%{http_code}" $line && echo ":ok"; done
+
+```
 
 
 
@@ -1318,7 +1372,246 @@ for line in `kubectl get pods -lapp=nginx -ogo-template --template='{{range .ite
 
 
 
-# 11 phsicalRouterReplaceBgpSoftwareBird
+
+
+## start bird and get some info
+
+
+
+```
+systemctl  start   bird
+```
+
+
+
+```
+[root@bgp-router ~]# birdcl  show  protocols 
+BIRD 1.6.8 ready.
+name     proto    table    state  since       info
+static1  Static   master   up     09:58:27    
+kernel1  Kernel   master   up     09:58:27    
+device1  Device   master   up     09:58:27    
+direct1  Direct   master   up     09:58:27    
+Mesh_11_1_0_250 BGP      master   up     09:58:46    Established   
+Mesh_11_1_0_251 BGP      master   up     09:58:41    Established   
+Mesh_12_1_0_252 BGP      master   up     09:58:42    Established   
+Mesh_12_1_0_253 BGP      master   up     09:58:44    Established   
+```
+
+
+
+
+
+```
+birdcl  show  protocols   protocol-name
+```
+
+
+
+```
+[root@bgp-router ~]# birdcl  show  protocols  Mesh_11_1_0_250 
+BIRD 1.6.8 ready.
+name     proto    table    state  since       info
+Mesh_11_1_0_250 BGP      master   up     09:58:45    Established   
+
+[root@bgp-router ~]# birdcl  show  protocols  Mesh_11_1_0_251 
+BIRD 1.6.8 ready.
+name     proto    table    state  since       info
+Mesh_11_1_0_251 BGP      master   up     09:58:40    Established   
+
+[root@bgp-router ~]# birdcl  show  protocols  Mesh_12_1_0_252 
+BIRD 1.6.8 ready.
+name     proto    table    state  since       info
+Mesh_12_1_0_252 BGP      master   up     09:58:41    Established   
+
+[root@bgp-router ~]# birdcl  show  protocols  Mesh_12_1_0_253 
+BIRD 1.6.8 ready.
+name     proto    table    state  since       info
+Mesh_12_1_0_253 BGP      master   up     09:58:43    Established   
+[root@bgp-router ~]# 
+```
+
+
+
+more info
+
+```
+birdcl  show  protocols  all  protocol-name 
+```
+
+
+
+```
+[root@bgp-router ~]# birdcl  show  protocols  all Mesh_11_1_0_250 
+BIRD 1.6.8 ready.
+name     proto    table    state  since       info
+Mesh_11_1_0_250 BGP      master   up     09:58:45    Established   
+  Description:    Connection to BGP peer
+  Preference:     100
+  Input filter:   ACCEPT
+  Output filter:  calico_export_to_bgp_peers
+  Routes:         1 imported, 0 exported, 1 preferred
+  Route change stats:     received   rejected   filtered    ignored   accepted
+    Import updates:              1          0          0          0          1
+    Import withdraws:            0          0        ---          0          0
+    Export updates:             10          4          6        ---          0
+    Export withdraws:            0        ---        ---        ---          0
+  BGP state:          Established
+    Neighbor address: 11.1.0.250
+    Neighbor AS:      64512
+    Neighbor ID:      11.1.0.250
+    Neighbor caps:    refresh enhanced-refresh restart-able llgr-aware AS4 add-path-rx add-path-tx
+    Session:          internal multihop AS4 add-path-rx add-path-tx
+    Source address:   11.1.0.1
+    Hold timer:       172/240
+    Keepalive timer:  1/80
+    
+    
+    
+    
+[root@bgp-router ~]# birdcl  show  protocols  all Mesh_11_1_0_251 
+BIRD 1.6.8 ready.
+name     proto    table    state  since       info
+Mesh_11_1_0_251 BGP      master   up     09:58:40    Established   
+  Description:    Connection to BGP peer
+  Preference:     100
+  Input filter:   ACCEPT
+  Output filter:  calico_export_to_bgp_peers
+  Routes:         1 imported, 0 exported, 1 preferred
+  Route change stats:     received   rejected   filtered    ignored   accepted
+    Import updates:              1          0          0          0          1
+    Import withdraws:            0          0        ---          0          0
+    Export updates:             10          4          6        ---          0
+    Export withdraws:            0        ---        ---        ---          0
+  BGP state:          Established
+    Neighbor address: 11.1.0.251
+    Neighbor AS:      64512
+    Neighbor ID:      11.1.0.251
+    Neighbor caps:    refresh enhanced-refresh restart-able llgr-aware AS4 add-path-rx add-path-tx
+    Session:          internal multihop AS4 add-path-rx add-path-tx
+    Source address:   11.1.0.1
+    Hold timer:       105/240
+    Keepalive timer:  60/80
+
+[root@bgp-router ~]# 
+
+
+
+
+[root@bgp-router ~]# birdcl  show  protocols  all Mesh_12_1_0_252
+BIRD 1.6.8 ready.
+name     proto    table    state  since       info
+Mesh_12_1_0_252 BGP      master   up     09:58:41    Established   
+  Description:    Connection to BGP peer
+  Preference:     100
+  Input filter:   ACCEPT
+  Output filter:  calico_export_to_bgp_peers
+  Routes:         1 imported, 0 exported, 1 preferred
+  Route change stats:     received   rejected   filtered    ignored   accepted
+    Import updates:              1          0          0          0          1
+    Import withdraws:            0          0        ---          0          0
+    Export updates:             10          4          6        ---          0
+    Export withdraws:            0        ---        ---        ---          0
+  BGP state:          Established
+    Neighbor address: 12.1.0.252
+    Neighbor AS:      64512
+    Neighbor ID:      12.1.0.252
+    Neighbor caps:    refresh enhanced-refresh restart-able llgr-aware AS4 add-path-rx add-path-tx
+    Session:          internal multihop AS4 add-path-rx add-path-tx
+    Source address:   12.1.0.1
+    Hold timer:       189/240
+    Keepalive timer:  69/80
+
+[root@bgp-router ~]# 
+
+
+
+[root@bgp-router ~]# birdcl  show  protocols  all Mesh_12_1_0_253
+BIRD 1.6.8 ready.
+name     proto    table    state  since       info
+Mesh_12_1_0_253 BGP      master   up     09:58:44    Established   
+  Description:    Connection to BGP peer
+  Preference:     100
+  Input filter:   ACCEPT
+  Output filter:  calico_export_to_bgp_peers
+  Routes:         1 imported, 0 exported, 1 preferred
+  Route change stats:     received   rejected   filtered    ignored   accepted
+    Import updates:              1          0          0          0          1
+    Import withdraws:            0          0        ---          0          0
+    Export updates:             10          4          6        ---          0
+    Export withdraws:            0        ---        ---        ---          0
+  BGP state:          Established
+    Neighbor address: 12.1.0.253
+    Neighbor AS:      64512
+    Neighbor ID:      12.1.0.253
+    Neighbor caps:    refresh enhanced-refresh restart-able llgr-aware AS4 add-path-rx add-path-tx
+    Session:          internal multihop AS4 add-path-rx add-path-tx
+    Source address:   12.1.0.1
+    Hold timer:       216/240
+    Keepalive timer:  25/80
+
+[root@bgp-router ~]# 
+```
+
+
+
+
+
+
+
+
+
+### get  ibgp router info
+
+
+
+```
+[root@bgp-router ~]# birdcl  show route all 10.244.187.0/26
+BIRD 1.6.8 ready.
+10.244.187.0/26    via 11.1.0.250 on eth1 [Mesh_11_1_0_250 09:58:45] * (100/0) [i]
+        Type: BGP unicast univ
+        BGP.origin: IGP
+        BGP.as_path: 
+        BGP.next_hop: 11.1.0.250
+        BGP.local_pref: 100
+
+
+[root@bgp-router ~]# birdcl  show route all 10.244.229.192/26
+BIRD 1.6.8 ready.
+10.244.229.192/26  via 11.1.0.251 on eth1 [Mesh_11_1_0_251 09:58:40] * (100/0) [i]
+        Type: BGP unicast univ
+        BGP.origin: IGP
+        BGP.as_path: 
+        BGP.next_hop: 11.1.0.251
+        BGP.local_pref: 100
+
+
+[root@bgp-router ~]# birdcl  show route all 10.244.223.0/26
+BIRD 1.6.8 ready.
+10.244.223.0/26    via 12.1.0.252 on eth2 [Mesh_12_1_0_252 09:58:41] * (100/0) [i]
+        Type: BGP unicast univ
+        BGP.origin: IGP
+        BGP.as_path: 
+        BGP.next_hop: 12.1.0.252
+        BGP.local_pref: 100
+
+[root@bgp-router ~]# birdcl  show route all 10.244.240.64/26
+BIRD 1.6.8 ready.
+10.244.240.64/26   via 12.1.0.253 on eth2 [Mesh_12_1_0_253 09:58:43] * (100/0) [i]
+        Type: BGP unicast univ
+        BGP.origin: IGP
+        BGP.as_path: 
+        BGP.next_hop: 12.1.0.253
+        BGP.local_pref: 100
+[root@bgp-router ~]# 
+
+```
+
+
+
+
+
+# 11phsicalRouterReplaceBgpSoftwareBird
 
 
 
@@ -1342,8 +1635,6 @@ poweroff
 
 
 
-
-
 ![image-20220615173121304](calico-bgp-Cross-subnet.assets/image-20220615173121304.png)
 
 
@@ -1354,9 +1645,43 @@ poweroff
 
 
 
+### cloud vmware vmnet11
+
+![image-20220616090103646](calico-bgp-Cross-subnet.assets/image-20220616090103646.png)
 
 
-router  AR2240
+
+
+
+### cloud vmware vmnet12
+
+![image-20220616090130634](calico-bgp-Cross-subnet.assets/image-20220616090130634.png)
+
+
+
+
+
+### cloud vmware vmnet13
+
+![image-20220616090150081](calico-bgp-Cross-subnet.assets/image-20220616090150081.png)
+
+
+
+
+
+
+
+
+
+### router  AR2240
+
+
+
+| interface | ip          | vmware net |
+| --------- | ----------- | ---------- |
+| GE 0/0/0  | 11.1.0.1/24 | vmnet11    |
+| GE 0/0/1  | 12.1.0.1/24 | vmnet12    |
+| GE 0/0/2  | 13.1.0.1/24 | vmnet13    |
 
 
 
@@ -1389,7 +1714,6 @@ ping 11.1.0.251
 
 ping 12.1.0.252
 ping 12.1.0.253
-
 ```
 
 
@@ -1720,4 +2044,180 @@ ping
 200:ok
 [root@12-1-0-253 ~]# 
 ```
+
+
+
+
+
+
+
+
+
+
+
+# 12 use  bgp  when add a k8s node
+
+
+
+## add a k8s node   node  subnet vment11  
+
+
+
+## node ip is  11.1.0.252
+
+
+
+## bird  config  add  config for 11.1.0.252
+
+
+
+like this
+
+
+
+when add a k8s node
+
+calico  use  confd  auto  config  bird  config  
+
+
+
+you also can  auto config bird config when add a k8s node
+
+you must monitor k8s cluster node   if  find node add event   you also  can use confd auto config  bird config
+
+
+
+or like this
+
+```
+kubectl  get node -w
+```
+
+
+
+in face you can use informmer  is better
+
+
+
+# 13 monitor Etcd add static route
+
+
+
+
+
+
+
+monitor etcd  pod subnet info  not use kubectl
+
+```
+kubectl get ipamblocks.crd.projectcalico.org -o jsonpath="{range .items[*]}{'podNetwork: '}{.spec.cidr}{'\t NodeIP: '}{.spec.affinity}{'\n'}"
+
+```
+
+
+
+
+
+
+
+etcd info
+
+
+
+when add  node calico not 立即 分配pod sub 只有上面运行了非host 网络模式的pod后 才会分配pod node
+
+```
+ETCDCTL_API=3 etcdctl --endpoints=https://11.1.0.250:2379 \
+--cacert=/etc/kubernetes/pki/etcd/ca.crt  \
+--cert=/etc/kubernetes/pki/apiserver-etcd-client.crt \
+--key=/etc/kubernetes/pki/apiserver-etcd-client.key  \
+get /registry/crd.projectcalico.org/ipamblocks/  --prefix --keys-only
+```
+
+
+
+
+
+```
+ETCDCTL_API=3 etcdctl --endpoints=https://11.1.0.250:2379 \
+--cacert=/etc/kubernetes/pki/etcd/ca.crt  \
+--cert=/etc/kubernetes/pki/apiserver-etcd-client.crt \
+--key=/etc/kubernetes/pki/apiserver-etcd-client.key  \
+get /registry/crd.projectcalico.org/blockaffinities/  --prefix --keys-only
+```
+
+
+
+
+
+## test etcd watch
+
+
+
+### delete a node
+
+
+
+
+
+```
+kubectl  delete  node  12.1.0.253
+```
+
+
+
+
+
+
+
+watch pod subnet
+
+```
+ETCDCTL_API=3 etcdctl --endpoints=https://11.1.0.250:2379 \
+--cacert=/etc/kubernetes/pki/etcd/ca.crt  \
+--cert=/etc/kubernetes/pki/apiserver-etcd-client.crt \
+--key=/etc/kubernetes/pki/apiserver-etcd-client.key  \
+watch --prefix \
+/registry/crd.projectcalico.org/blockaffinities/
+```
+
+
+
+
+
+```
+PUT
+/registry/crd.projectcalico.org/blockaffinities/12.1.0.252-10-244-223-0-26
+{"apiVersion":"crd.projectcalico.org/v1","kind":"BlockAffinity","metadata":{"annotations":{"projectcalico.org/metadata":"{\"creationTimestamp\":null}"},"creationTimestamp":"2022-06-16T05:25:47Z","generation":1,"managedFields":[{"apiVersion":"crd.projectcalico.org/v1","fieldsType":"FieldsV1","fieldsV1":{"f:metadata":{"f:annotations":{".":{},"f:projectcalico.org/metadata":{}}},"f:spec":{".":{},"f:cidr":{},"f:deleted":{},"f:node":{},"f:state":{}}},"manager":"Go-http-client","operation":"Update","time":"2022-06-16T05:25:47Z"}],"name":"12.1.0.252-10-244-223-0-26","uid":"0767f741-e37c-4dde-95d3-1854a32421d1"},"spec":{"cidr":"10.244.223.0/26","deleted":"false","node":"12.1.0.252","state":"pending"}}
+
+PUT
+/registry/crd.projectcalico.org/blockaffinities/12.1.0.252-10-244-223-0-26
+{"apiVersion":"crd.projectcalico.org/v1","kind":"BlockAffinity","metadata":{"annotations":{"projectcalico.org/metadata":"{\"creationTimestamp\":null}"},"creationTimestamp":"2022-06-16T05:25:47Z","generation":2,"managedFields":[{"apiVersion":"crd.projectcalico.org/v1","fieldsType":"FieldsV1","fieldsV1":{"f:metadata":{"f:annotations":{".":{},"f:projectcalico.org/metadata":{}}},"f:spec":{".":{},"f:cidr":{},"f:deleted":{},"f:node":{},"f:state":{}}},"manager":"Go-http-client","operation":"Update","time":"2022-06-16T05:25:47Z"}],"name":"12.1.0.252-10-244-223-0-26","uid":"0767f741-e37c-4dde-95d3-1854a32421d1"},"spec":{"cidr":"10.244.223.0/26","deleted":"false","node":"12.1.0.252","state":"confirmed"}}
+```
+
+
+
+
+
+```
+confirmed
+```
+
+
+
+
+
+
+
+### 1 watch  是否有新节点加入
+
+###  2 在指定节点上创建一个非host网络 类型的pod  触发分配pod subnet
+
+### 3 watch etcd  对 confirmed  put 事件添加  路由
+
+
+
+
+
+
 
