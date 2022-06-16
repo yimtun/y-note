@@ -2221,3 +2221,116 @@ confirmed
 
 
 
+# 14 testRoutesAggregation other linux
+
+
+
+
+
+```
+[root@localhost ~]# ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
+    link/ether 00:0c:29:6e:c1:14 brd ff:ff:ff:ff:ff:ff
+    inet 192.168.3.25/24 brd 192.168.3.255 scope global dynamic eth0
+       valid_lft 86124sec preferred_lft 86124sec
+    inet6 fe80::20c:29ff:fe6e:c114/64 scope link 
+       valid_lft forever preferred_lft forever
+```
+
+
+
+
+
+| ip           | net card | default gateway |
+| ------------ | -------- | --------------- |
+| 192.168.3.25 | eth0     | 192.168.1.1     |
+|              |          |                 |
+|              |          |                 |
+
+
+
+test Routes Aggregation other on linux server 
+
+
+
+
+
+```
+before add pod subent route
+
+[root@localhost ~]# route -n
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+0.0.0.0         192.168.3.1     0.0.0.0         UG    0      0        0 eth0
+169.254.0.0     0.0.0.0         255.255.0.0     U     1002   0        0 eth0
+192.168.3.0     0.0.0.0         255.255.255.0   U     0      0        0 eth0
+
+
+
+#add pod subnet
+ip route add  10.244.0.0/16  via 192.168.3.254
+
+
+# after  add pod subent rout
+[root@localhost ~]# route -n
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+0.0.0.0         192.168.3.1     0.0.0.0         UG    0      0        0 eth0
+10.244.0.0      192.168.3.254   255.255.0.0     UG    0      0        0 eth0
+169.254.0.0     0.0.0.0         255.255.0.0     U     1002   0        0 eth0
+192.168.3.0     0.0.0.0         255.255.255.0   U     0      0        0 eth0
+[root@localhost ~]# 
+
+```
+
+
+
+
+
+```
+[root@localhost ~]# tracepath  10.244.229.202
+ 1?: [LOCALHOST]                                         pmtu 1500
+ 1:  192.168.3.254                                         0.370ms 
+ 1:  192.168.3.254                                         0.268ms 
+ 2:  11.1.0.251                                            0.604ms 
+ 3:  10.244.229.202                                        0.689ms reached
+     Resume: pmtu 1500 hops 3 back 3 
+[root@localhost ~]# 
+
+
+[root@localhost ~]# tracepath  10.244.187.7
+ 1?: [LOCALHOST]                                         pmtu 1500
+ 1:  192.168.3.254                                         0.378ms 
+ 1:  192.168.3.254                                         0.346ms 
+ 2:  11.1.0.250                                            0.829ms 
+ 3:  10.244.187.7                                          1.734ms reached
+     Resume: pmtu 1500 hops 3 back 3 
+     
+[root@localhost ~]# tracepath 10.244.223.0
+ 1?: [LOCALHOST]                                         pmtu 1500
+ 1:  192.168.3.254                                         0.340ms 
+ 1:  192.168.3.254                                         0.253ms 
+ 2:  12.1.0.252                                            0.554ms 
+ 3:  10.244.223.0                                          1.786ms reached
+     Resume: pmtu 1500 hops 3 back 3 
+[root@localhost ~]# 
+
+
+Routes Aggregation is ok
+
+
+
+```
+
+
+
+
+
+
+
