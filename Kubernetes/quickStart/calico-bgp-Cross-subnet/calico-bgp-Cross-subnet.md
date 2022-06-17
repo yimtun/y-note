@@ -101,9 +101,9 @@ https://projectcalico.docs.tigera.io/archive/v3.21/reference/architecture/design
 
 
 
-if   two pods'node  have   same    subent    they    will use Physics L2      tor
+if   two pods'node  have   same    subent    they    will use Physics L2     is  the torSwitch
 
-if   two pods'node  have   diffent   seubnet  they   will use Physics L2     router
+if   two pods'node  have   diffent   seubnet  they   will use Physics L3     is the    router
 
 
 
