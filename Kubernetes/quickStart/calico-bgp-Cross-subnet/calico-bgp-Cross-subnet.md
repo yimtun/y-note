@@ -70,6 +70,40 @@
 
 
 
+
+
+
+
+
+```
+no Route Reflectors 
+```
+
+
+
+
+
+https://projectcalico.docs.tigera.io/archive/v3.21/reference/architecture/design/l2-interconnect-fabric
+
+
+
+https://projectcalico.docs.tigera.io/archive/v3.21/reference/architecture/design/l3-interconnect-fabric#bgp-only-interconnect-fabrics
+
+
+
+
+
+![image-20220617114754998](calico-bgp-Cross-subnet.assets/image-20220617114754998.png)
+
+
+
+
+
+
+
+
+
+
 # 1 cluster network info
 
 
