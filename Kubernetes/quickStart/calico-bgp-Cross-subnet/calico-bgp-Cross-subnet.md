@@ -122,7 +122,7 @@ if   two pods'node  have   diffent   seubnet  they   will use Physics L3     is 
 
 | subnet         | vmwareNet                              | vmware net mode |
 | -------------- | -------------------------------------- | --------------- |
-| 11.1.0.0/24    | vmnet11   disable dhcp                 | host only       |
+| 11.1.0.0/24    | vmnet11    disable dhcp                | host only       |
 | 12.1.0.0/24    | vmnet12    disable dhcp                | host only       |
 | 13.1.0.0/24    | vmnet13    disable dhcp                | host only       |
 | 192.168.3.0/24 | is windows  network  can access public | bridge          |
@@ -2443,4 +2443,16 @@ Routes Aggregation is ok
 
 
 
+
+
+
+# cluster undo
+
+
+
+```
+kubeadm  reset -f
+rm -rf /etc/cni/
+reboot
+```
 

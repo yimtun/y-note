@@ -723,7 +723,7 @@ ok
 
 
 
-# 过后整理
+# lvs full-nat 过后整理
 
 
 
@@ -776,7 +776,7 @@ iptables -t nat -I POSTROUTING 1 -s 100.1.0.1/24 !--d 100.1.0.1/24 -j MASQUERADE
 
 
 
-# rebuild-ok
+# lvs-full-nat rebuild-ok
 
 
 
@@ -810,5 +810,41 @@ EOF
 
 ```
 sysctl  --system
+```
+
+
+
+
+
+
+
+# 11  设置filter 表 iptables 链默认规则为拒绝
+
+
+
+```
+iptables -t filter -P INPUT DROP 
+```
+
+
+
+# 12 放开tcp 22
+
+
+
+```
+iptables  -t filter -A INPUT -p tcp --dport 22 -j ACCEPT
+```
+
+
+
+# 13 放开udp 端口段
+
+
+
+
+
+```
+iptables -A INPUT -p udp --dport 1000:2000 -j ACCEPT
 ```
 

@@ -42,6 +42,14 @@
 ## Linux
 
  ### Ubuntu[Ubuntu](OperatingSystem/Linux/Ubuntu.md)
+ ### CentOS8[CentOS8](OperatingSystem/Linux/CentOS8.md)
+
+
+
+
+
+
+
 
  ### cli
 
@@ -63,7 +71,15 @@
 
 # Database
 
+## es [es](Database/es.md)
 
+
+
+
+
+# Monitor
+
+## prometheus  [prometheus](Monitor/prometheus.md)
 
 
 
@@ -204,7 +220,10 @@ docker run -d  -p 80:80 --privileged yimtune/centos79 /usr/sbin/init
 
 ## network [network](Self-questioning/network/network.md)
 
-### memory [memory](Self-questioning/memory/memory.md)
+## memory [memory](Self-questioning/memory/memory.md)
+## cpu [cpu](Self-questioning/cpu/cpu.md)
+
+
 
 ## https-and-certificate [https-and-certificate](Self-questioning/https-and-certificate/https-and-certificate.md)
 
